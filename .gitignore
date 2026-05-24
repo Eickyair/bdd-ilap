@@ -1,0 +1,3 @@
+# Ignorar los recursos base en PDF para no saturar el repositorio
+/bdd-base/
+*.pdf
