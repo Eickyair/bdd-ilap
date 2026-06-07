@@ -1,0 +1,71 @@
+-- ---------------------------------------------------------------------------
+-- tnsnames.ora
+-- @Autor:          Erick Yair Aguilar Martínez
+-- @Fecha creación: 04/06/2026
+-- @Descripción:    Aliases TNS para las 4 PDBs de la BDD distribuida iLap.
+--                  Copiar este archivo en AMBOS contenedores en:
+--                  $ORACLE_HOME/network/admin/tnsnames.ora
+--
+-- Contenedor 1 (h1-bdd-proy-eam.fi.unam | 172.20.0.21): eambdd_s1, eambdd_s2
+-- Contenedor 2 (h2-bdd-proy-eam.fi.unam | 172.20.0.22): eambdd_s3, eambdd_s4
+-- ---------------------------------------------------------------------------
+
+-- CDB raíz del contenedor 1 (necesario para crear objetos como sysdba)
+FREE =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = h1-bdd-proy-eam.fi.unam)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = free.fi.unam)
+    )
+  )
+
+-- Nodo 1: Norte — mayor capacidad de procesamiento
+EAMBDD_S1 =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = h1-bdd-proy-eam.fi.unam)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = eambdd_s1.fi.unam)
+    )
+  )
+
+-- Nodo 2: Este — mayor capacidad de almacenamiento
+EAMBDD_S2 =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = h1-bdd-proy-eam.fi.unam)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = eambdd_s2.fi.unam)
+    )
+  )
+
+-- Nodo 3: Oeste — cifrado, seguridad y privacidad
+EAMBDD_S3 =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = h2-bdd-proy-eam.fi.unam)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = eambdd_s3.fi.unam)
+    )
+  )
+
+-- Nodo 4: Sur — procesamiento de imágenes
+EAMBDD_S4 =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = h2-bdd-proy-eam.fi.unam)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = eambdd_s4.fi.unam)
+    )
+  )
+
+-- Listener del contenedor 1 (usado en LISTENER_FREE para DB links internos)
+LISTENER_FREE =
+  (ADDRESS = (PROTOCOL = TCP)(HOST = h1-bdd-proy-eam.fi.unam)(PORT = 1521))
