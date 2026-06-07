@@ -126,24 +126,57 @@ _ensure_container() {
 _ensure_container "${C1_NAME}" "${C1_HOST}" "${C1_IP}" "${C2_HOST}" "${C2_IP}"
 _ensure_container "${C2_NAME}" "${C2_HOST}" "${C2_IP}" "${C1_HOST}" "${C1_IP}"
 
+# ------------------------------------------ aliases locales Oracle Net
+step "Resolución local — registrar aliases FQDN/shortname en /etc/hosts"
+_ensure_hosts_aliases() {
+    local container="$1" self_host="$2" self_ip="$3" peer_host="$4" peer_ip="$5"
+    local self_short="${self_host%%.*}" peer_short="${peer_host%%.*}"
+
+    log "Normalizando /etc/hosts en ${container} para ${self_host} y ${peer_host}..."
+    docker exec "${container}" bash -c "
+        tmp=\$(mktemp)
+        awk '!/h1-bdd-proy-eam\\.fi\\.unam|h2-bdd-proy-eam\\.fi\\.unam/' /etc/hosts > \"\${tmp}\"
+        printf '%s %s %s\n' '${self_ip}' '${self_host}' '${self_short}' >> \"\${tmp}\"
+        printf '%s %s %s\n' '${peer_ip}' '${peer_host}' '${peer_short}' >> \"\${tmp}\"
+        cat \"\${tmp}\" > /etc/hosts
+        rm -f \"\${tmp}\"
+    "
+    ok "/etc/hosts en ${container} actualizado con aliases locales y remotos de Oracle Net."
+}
+
+_ensure_hosts_aliases "${C1_NAME}" "${C1_HOST}" "${C1_IP}" "${C2_HOST}" "${C2_IP}"
+_ensure_hosts_aliases "${C2_NAME}" "${C2_HOST}" "${C2_IP}" "${C1_HOST}" "${C1_IP}"
+
 # ------------------------------------------------- copiar tnsnames.ora
 step "tnsnames.ora — distribuir archivo de aliases TNS a ambos contenedores"
 TNSNAMES_SRC="${SCRIPT_DIR}/tnsnames.ora"
 
+_resolve_oracle_home() {
+    local container="$1"
+    local oracle_home
+
+    oracle_home=$(docker exec "${container}" bash -lc \
+        'source /etc/profile.d/99-custom-env.sh 2>/dev/null; printf "%s" "${ORACLE_HOME:-}"' 2>/dev/null || true)
+
+    if [ -z "${oracle_home}" ]; then
+        oracle_home=$(docker exec "${container}" bash -lc \
+            'find /opt/oracle/product -maxdepth 5 -path "*/bin/sqlplus" 2>/dev/null | head -1 | sed "s|/bin/sqlplus||"' 2>/dev/null || true)
+    fi
+
+    printf '%s' "${oracle_home}"
+}
+
 for container in "${C1_NAME}" "${C2_NAME}"; do
     log "Detectando ORACLE_HOME en ${container}..."
-    ORACLE_HOME=$(docker exec "${container}" bash -c \
-        'source /etc/profile.d/99-custom-env.sh 2>/dev/null; echo "${ORACLE_HOME}"' 2>/dev/null || true)
-
-    if [ -z "${ORACLE_HOME}" ]; then
-        log "Variable ORACLE_HOME no definida en /etc/profile.d — buscando sqlplus en /opt/oracle/product..."
-        ORACLE_HOME=$(docker exec "${container}" bash -c \
-            'find /opt/oracle/product -maxdepth 3 -name "sqlplus" 2>/dev/null | head -1 | sed "s|/bin/sqlplus||"' 2>/dev/null || true)
-    fi
+    ORACLE_HOME=$(_resolve_oracle_home "${container}")
 
     if [ -n "${ORACLE_HOME}" ]; then
         docker exec "${container}" bash -c "mkdir -p ${ORACLE_HOME}/network/admin"
         docker cp "${TNSNAMES_SRC}" "${container}:${ORACLE_HOME}/network/admin/tnsnames.ora"
+        docker exec "${container}" bash -c "
+            chmod 644 '${ORACLE_HOME}/network/admin/tnsnames.ora'
+            chown oracle '${ORACLE_HOME}/network/admin/tnsnames.ora' 2>/dev/null || true
+        "
         ok "tnsnames.ora → ${container}:${ORACLE_HOME}/network/admin/ (4 alias: eambdd_s1..s4)"
     else
         warn "No se encontró ORACLE_HOME en ${container} — tnsnames.ora NO copiado. Copia manual requerida."
@@ -167,24 +200,31 @@ ok "ORACLE_HOSTNAME=h2-bdd-proy-eam persistido en /etc/profile.d/99-custom-env.s
 # ------------------------------------------- listener.ora
 step "listener.ora — configurar dirección TCP/IPC del listener Oracle en cada contenedor"
 _write_listener() {
-    local container="$1" oracle_host="$2"
-    log "Escribiendo listener.ora en ${container} (HOST=${oracle_host}, PORT=1521)..."
+        local container="$1" oracle_host="$2" oracle_home
+
+        oracle_home=$(_resolve_oracle_home "${container}")
+        if [ -z "${oracle_home}" ]; then
+                warn "No se encontró ORACLE_HOME en ${container} — listener.ora NO actualizado."
+                return
+        fi
+
+        log "Escribiendo listener.ora en ${container} (bind=0.0.0.0, alias TNS=${oracle_host}, PORT=1521)..."
     docker exec "${container}" bash -c "
-        OHOME=\$(find /opt/oracle/product -maxdepth 3 -name sqlplus 2>/dev/null | head -1 | sed 's|/bin/sqlplus||')
-        [ -z \"\$OHOME\" ] && exit 0
-        mkdir -p \"\$OHOME/network/admin\"
-        cat > \"\$OHOME/network/admin/listener.ora\" <<'LISTENER_EOF'
+                mkdir -p '${oracle_home}/network/admin'
+                cat > '${oracle_home}/network/admin/listener.ora' <<'LISTENER_EOF'
 LISTENER =
   (DESCRIPTION_LIST =
     (DESCRIPTION =
-      (ADDRESS = (PROTOCOL = TCP)(HOST = ${oracle_host})(PORT = 1521))
+            (ADDRESS = (PROTOCOL = TCP)(HOST = 0.0.0.0)(PORT = 1521))
       (ADDRESS = (PROTOCOL = IPC)(KEY = EXTPROC1521))
     )
   )
 LISTENER_EOF
-        echo 'listener.ora escrito en '\"\$OHOME/network/admin/\"
+                chmod 644 '${oracle_home}/network/admin/listener.ora'
+                chown oracle '${oracle_home}/network/admin/listener.ora' 2>/dev/null || true
+                echo 'listener.ora escrito en ${oracle_home}/network/admin/'
     "
-    ok "listener.ora en ${container} → TCP:${oracle_host}:1521 + IPC:EXTPROC1521."
+        ok "listener.ora en ${container} → TCP:0.0.0.0:1521 + IPC:EXTPROC1521 (aliases TNS conservados)."
 }
 
 _write_listener "${C1_NAME}" "${C1_HOST}"

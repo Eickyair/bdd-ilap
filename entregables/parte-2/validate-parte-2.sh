@@ -25,13 +25,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPORT="${SCRIPT_DIR}/validation-report.txt"
 PASS=0; FAIL=0
 
+trim_sqlplus_output() {
+    tr -d '[:space:]'
+}
+
 _ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
 exec > >(tee "${REPORT}") 2>&1
 
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║  BDD Distribuida iLap — Reporte de Validación                ║"
-echo "║  $(_ts)                                           ║"
+echo "║  $(_ts)                                         ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -78,7 +82,7 @@ for pdb in eambdd_s1 eambdd_s2 eambdd_s3 eambdd_s4; do
 set heading off feedback off pagesize 0
 select 'UP' from dual;
 exit;
-EOF" 2>/dev/null | tr -d ' \n')
+EOF" 2>/dev/null | trim_sqlplus_output)
     check "Conexión ilap_bdd@${pdb}" "${result}" "UP"
 done
 
@@ -96,7 +100,7 @@ for pdb in eambdd_s1 eambdd_s2 eambdd_s3 eambdd_s4; do
 set heading off feedback off pagesize 0
 select count(*) from user_db_links;
 exit;
-EOF" 2>/dev/null | tr -d ' \n')
+EOF" 2>/dev/null | trim_sqlplus_output)
     check "DB links en ${pdb}" "${cnt}" "3"
 done
 
@@ -116,7 +120,7 @@ for pdb in eambdd_s1 eambdd_s2 eambdd_s3 eambdd_s4; do
 set heading off feedback off pagesize 0
 select count(*) from user_tables;
 exit;
-EOF" 2>/dev/null | tr -d ' \n')
+EOF" 2>/dev/null | trim_sqlplus_output)
     check "Tablas en ${pdb}" "${cnt}" "${EXPECTED_TABLES[${pdb}]}"
 done
 
@@ -141,7 +145,7 @@ for src_pdb in eambdd_s1 eambdd_s2 eambdd_s3 eambdd_s4; do
 set heading off feedback off pagesize 0
 select 'OK' from dual@${link};
 exit;
-EOF" 2>/dev/null | tr -d ' \n')
+EOF" 2>/dev/null | trim_sqlplus_output)
         check "DB link ${src_pdb} → @${link}" "${result}" "OK"
     done
 done
@@ -162,7 +166,7 @@ _table_exists() {
 set heading off feedback off pagesize 0
 select count(*) from user_tables where table_name=upper('${tname}');
 exit;
-EOF" 2>/dev/null | tr -d ' \n')
+EOF" 2>/dev/null | trim_sqlplus_output)
     echo "${cnt}"
 }
 

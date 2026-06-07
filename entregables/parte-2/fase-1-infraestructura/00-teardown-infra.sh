@@ -17,11 +17,11 @@
 #   Contenedor   : c1-bdd-eam
 #
 # Casos de estado de contenedor manejados:
-#   running     → docker stop -t 30 (timeout Oracle) + docker rm
+#   running     → intento corto de stop + docker rm (o force si no responde)
 #   exited      → docker rm directo
 #   created     → docker rm directo (nunca arrancó)
-#   paused      → docker unpause + docker stop -t 30 + docker rm
-#   restarting  → docker update --restart=no + docker stop -t 10 + docker rm
+#   paused      → docker unpause + stop corto + docker rm
+#   restarting  → docker update --restart=no + stop corto + docker rm
 #   dead        → docker rm -f
 #   removing    → skip (ya en proceso de borrado)
 #
@@ -40,7 +40,8 @@ set -uo pipefail
 C1="c1-bdd-proy-eam"
 C2="c2-bdd-proy-eam"
 NETWORK="bdd-proy-net"
-STOP_TIMEOUT=60        # segundos — Oracle necesita tiempo para cerrar limpio
+STOP_TIMEOUT=12        # segundos — ventana corta de cierre limpio
+RESTART_TIMEOUT=5      # segundos — suficiente tras desactivar restart policy
 
 PROTECTED_IMAGE="bdd-eam:1.0"
 PROTECTED_CONTAINER="c1-bdd-eam"
@@ -90,6 +91,29 @@ _network_containers() {
         --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null | tr ' ' '\n' | grep -v '^$' || true
 }
 
+_rm_with_fallback() {
+    local name="$1"
+
+    docker rm "${name}" && ok "${name} eliminado." \
+        || {
+            err "Fallo con rm; intentando rm -f..."
+            docker rm -f "${name}" && ok "${name} eliminado (force)."
+        }
+}
+
+_stop_then_remove() {
+    local name="$1" timeout="$2"
+
+    log "Intentando detener ${name} con ventana corta (${timeout}s)..."
+    if docker stop -t "${timeout}" "${name}" >/dev/null 2>&1; then
+        ok "${name} detenido sin agotar la ventana de gracia."
+    else
+        warn "${name} no cerró dentro de ${timeout}s; se fuerza eliminación en el siguiente paso."
+    fi
+
+    _rm_with_fallback "${name}"
+}
+
 # --------------------------------- función principal: eliminar contenedor
 _remove_container() {
     local name="$1"
@@ -114,27 +138,18 @@ _remove_container() {
         paused)
             log "Reanudando contenedor pausado ${name}..."
             docker unpause "${name}" || true
-            log "Deteniendo ${name} (timeout ${STOP_TIMEOUT}s)..."
-            docker stop -t "${STOP_TIMEOUT}" "${name}" || true
-            docker rm "${name}" && ok "${name} eliminado." \
-                || { err "Fallo con rm; intentando rm -f..."; docker rm -f "${name}" && ok "${name} eliminado (force)."; }
+            _stop_then_remove "${name}" "${STOP_TIMEOUT}"
             ;;
 
         restarting)
             # El daemon lo reinicia automáticamente; actualizar política antes de stop
             log "Actualizando restart policy de ${name} a 'no'..."
             docker update --restart=no "${name}" || true
-            log "Deteniendo ${name}..."
-            docker stop -t 10 "${name}" || true
-            docker rm "${name}" && ok "${name} eliminado." \
-                || { err "Fallo con rm; intentando rm -f..."; docker rm -f "${name}" && ok "${name} eliminado (force)."; }
+            _stop_then_remove "${name}" "${RESTART_TIMEOUT}"
             ;;
 
         running)
-            log "Deteniendo ${name} (timeout ${STOP_TIMEOUT}s — Oracle necesita tiempo)..."
-            docker stop -t "${STOP_TIMEOUT}" "${name}" || true
-            docker rm "${name}" && ok "${name} eliminado." \
-                || { err "Fallo con rm; intentando rm -f..."; docker rm -f "${name}" && ok "${name} eliminado (force)."; }
+            _stop_then_remove "${name}" "${STOP_TIMEOUT}"
             ;;
 
         exited|created)

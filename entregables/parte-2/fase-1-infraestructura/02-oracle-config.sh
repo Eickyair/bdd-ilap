@@ -19,6 +19,8 @@ set -euo pipefail
 
 C1="c1-bdd-proy-eam"
 C2="c2-bdd-proy-eam"
+C1_HOST="h1-bdd-proy-eam.fi.unam"
+C2_HOST="h2-bdd-proy-eam.fi.unam"
 
 # ----------------------------------------------------------------- colores
 RED='\033[0;31m'
@@ -62,6 +64,19 @@ select count(*) from v\$pdbs where lower(name)=lower('${pdb_name}');
 exit;
 EOF" 2>/dev/null | tr -d ' \n')
     [ "${result}" = "1" ]
+}
+
+_set_local_listener() {
+    local container="$1" host="$2"
+
+    log "Configurando LOCAL_LISTENER en ${container} → ${host}:1521 y forzando registro..."
+    docker exec "${container}" su - oracle -c "sqlplus -s / as sysdba <<EOF
+whenever sqlerror exit failure
+alter system set local_listener='(ADDRESS=(PROTOCOL=TCP)(HOST=${host})(PORT=1521))' scope=both;
+alter system register;
+exit;
+EOF" >/dev/null
+    ok "LOCAL_LISTENER persistido en ${container} y servicios registrados en el listener local."
 }
 
 _wait_oracle() {
@@ -115,6 +130,8 @@ _elapsed=$(( $(date +%s) - _t0 ))
 [ $_rc -eq 124 ] && die "Timeout (360s): startup del CDB en ${C1} no completó. Verifica con: docker exec ${C1} su - oracle -c 'sqlplus / as sysdba'"
 timer "Comando startup completado en ${_elapsed}s."
 
+_set_local_listener "${C1}" "${C1_HOST}"
+
 _wait_oracle "${C1}"
 
 step "Verificando PDBs en ${C1}"
@@ -148,6 +165,8 @@ set -e
 _elapsed=$(( $(date +%s) - _t0 ))
 [ $_rc -eq 124 ] && die "Timeout (360s): startup del CDB en ${C2} no completó. Verifica con: docker exec ${C2} su - oracle -c 'sqlplus / as sysdba'"
 timer "Comando startup completado en ${_elapsed}s."
+
+_set_local_listener "${C2}" "${C2_HOST}"
 
 _wait_oracle "${C2}"
 
@@ -266,6 +285,7 @@ step "Listener en ${C2} — reiniciar para registrar eambdd_s3/s4"
 log "Deteniendo listener actual y reiniciando para que los nuevos nodos sean visibles por TNS..."
 docker exec "${C2}" su - oracle -c \
     "lsnrctl stop 2>/dev/null; lsnrctl start" 2>/dev/null || true
+_set_local_listener "${C2}" "${C2_HOST}"
 ok "Listener reiniciado en ${C2} — eambdd_s3 y eambdd_s4 disponibles en TNS."
 
 # ---------------------------------------------------------------- resumen

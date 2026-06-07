@@ -6,6 +6,8 @@
 | 2026-05-24 | Erick Yair Aguilar Martínez | 1.0 | Diseño inicial del esquema de fragmentación (Proyecto Final Parte 1). |
 | 2026-05-25 | Erick Yair Aguilar Martínez | 1.1 | Normalización de la nomenclatura de nodos, PDBs y dominios para respetar la secuencia S1, S2, S3 y S4. |
 | 2026-06-04 | Erick Yair Aguilar Martínez | 2.0 | Implementación de Parte 2: infraestructura Docker, tnsnames, usuario ilap_bdd, database links y DDL de fragmentos. |
+| 2026-06-07 | GitHub Copilot | 2.1 | Endurecimiento de Oracle Net en Parte 2: `/etc/hosts` se normaliza en ambos contenedores, `tnsnames.ora` y `listener.ora` se dejan legibles para `oracle`, y el listener ahora hace bind en `0.0.0.0` para evitar fallos por hostnames heredados de la imagen base. |
+| 2026-06-07 | GitHub Copilot | 2.2 | Corrección de registro dinámico Oracle Net: `local_listener` ya no depende del alias compartido `LISTENER_FREE`; `02-oracle-config.sh` fija `local_listener` a la dirección propia de cada contenedor y ejecuta `alter system register` para registrar `eambdd_s1..s4` en su listener local. |
 
 ---
 
@@ -85,6 +87,13 @@ Se define un entorno de bases de datos distribuidas integrado por **4 nodos**. P
 | `s-03-ilap-eam-s3-ddl.sql` | DDL del Nodo 3 (Oeste): 11 tablas con sus restricciones físicas. |
 | `s-03-ilap-eam-s4-ddl.sql` | DDL del Nodo 4 (Sur): 11 tablas; `laptop_f5_eam_s4` precede a `laptop_f4_eam_s4`. |
 | `s-03-ilap-main-ddl.sql` | Orquestador: conecta como `ilap_bdd` a cada PDB e invoca el DDL correspondiente. |
+
+### 4.4. Endurecimiento Oracle Net (2026-06-07)
+
+*   `01-docker-up.sh` ahora reescribe `/etc/hosts` dentro de `c1-bdd-proy-eam` y `c2-bdd-proy-eam` para garantizar resolución local de `h1-bdd-proy-eam.fi.unam` / `h2-bdd-proy-eam.fi.unam` y sus shortnames.
+*   `tnsnames.ora` y `listener.ora` quedan con permisos de lectura para el usuario `oracle` tras copiarse/escribirse.
+*   `listener.ora` usa `HOST = 0.0.0.0` en lugar del FQDN del contenedor para desacoplar el arranque del listener del hostname heredado en la imagen `bdd-eam:1.0`, manteniendo los aliases TNS basados en FQDN.
+*   `02-oracle-config.sh` fija `LOCAL_LISTENER` con un `ADDRESS` explícito por contenedor (`h1-bdd-proy-eam.fi.unam:1521` en `c1`, `h2-bdd-proy-eam.fi.unam:1521` en `c2`) y fuerza `alter system register` para evitar que el registro dinámico use el alias compartido `LISTENER_FREE` del `tnsnames.ora` común.
 
 ### 4.3. Decisiones de implementación DDL
 
