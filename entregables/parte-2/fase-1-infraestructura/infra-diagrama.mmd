@@ -1,0 +1,57 @@
+%% Autor       : erick
+%% Fecha        : 2026-06-07
+%% Descripción  : Diagrama de bloques de la infraestructura Docker para la BDD
+%%                distribuida iLap — 2 contenedores, 4 PDBs, red bdd-proy-net.
+
+flowchart LR
+
+    subgraph HOST["Host · Ubuntu · erick"]
+
+        subgraph NET["bdd-proy-net  ·  172.20.0.0/16"]
+
+            subgraph C1["c1-bdd-proy-eam\nh1-bdd-proy-eam.fi.unam  ·  172.20.0.21"]
+                direction TB
+                IMG1["Imagen base: bdd-eam:1.0\n(commit de c1-bdd-eam)"]
+                CDB1[("Oracle CDB\nFREE")]
+                S1["eambdd_s1\nNodo 1 · Norte\nProcesamiento"]
+                S2["eambdd_s2\nNodo 2 · Este\nAlmacenamiento"]
+                IMG1 --> CDB1
+                CDB1 --> S1
+                CDB1 --> S2
+            end
+
+            subgraph C2["c2-bdd-proy-eam\nh2-bdd-proy-eam.fi.unam  ·  172.20.0.22"]
+                direction TB
+                IMG2["Imagen base: bdd-eam:1.0\n(clon de c1 + PDBs recreadas)"]
+                CDB2[("Oracle CDB\nFREE")]
+                S3["eambdd_s3\nNodo 3 · Oeste\nSeguridad"]
+                S4["eambdd_s4\nNodo 4 · Sur\nImagenes"]
+                IMG2 --> CDB2
+                CDB2 --> S3
+                CDB2 --> S4
+            end
+
+            %% DB Links — malla completa (12 links, 3 por nodo)
+            S1 <-->|"DB Link"| S2
+            S1 <-->|"DB Link"| S3
+            S1 <-->|"DB Link"| S4
+            S2 <-->|"DB Link"| S3
+            S2 <-->|"DB Link"| S4
+            S3 <-->|"DB Link"| S4
+
+        end
+
+    end
+
+    NOTE["12 DB Links bidireccionales\n3 por nodo\nnombre = nombre global PDB destino\nusuario: ilap_bdd"]
+
+    style NOTE fill:#fffbe6,stroke:#d4a800,color:#333
+    style NET  fill:#e8f4fd,stroke:#2196F3
+    style C1   fill:#e8f8e8,stroke:#4CAF50
+    style C2   fill:#fce8f3,stroke:#E91E96
+    style S1   fill:#c8e6c9,stroke:#388E3C
+    style S2   fill:#c8e6c9,stroke:#388E3C
+    style S3   fill:#f8bbd0,stroke:#C2185B
+    style S4   fill:#f8bbd0,stroke:#C2185B
+    style CDB1 fill:#fff9c4,stroke:#F57F17
+    style CDB2 fill:#fff9c4,stroke:#F57F17
