@@ -1,3 +1,12 @@
-# Ignorar los recursos base en PDF para no saturar el repositorio
+# Recursos base del curso (PDFs, apuntes, prácticas)
 /bdd-base/
 *.pdf
+
+# Materiales del profesor — no forman parte de la implementación
+/proyecto-final/
+
+# Configuración local del IDE
+/.vscode/
+
+# Credenciales y configuración local del agente (NO subir a git)
+CLAUDE.local.md
