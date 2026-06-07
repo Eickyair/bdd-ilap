@@ -40,7 +40,7 @@ set -uo pipefail
 C1="c1-bdd-proy-eam"
 C2="c2-bdd-proy-eam"
 NETWORK="bdd-proy-net"
-STOP_TIMEOUT=30        # segundos — Oracle necesita tiempo para cerrar limpio
+STOP_TIMEOUT=60        # segundos — Oracle necesita tiempo para cerrar limpio
 
 PROTECTED_IMAGE="bdd-eam:1.0"
 PROTECTED_CONTAINER="c1-bdd-eam"
