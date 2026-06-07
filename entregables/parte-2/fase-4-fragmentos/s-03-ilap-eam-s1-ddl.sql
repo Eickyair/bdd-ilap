@@ -1,6 +1,6 @@
---@Autor:          Erick Yair Aguilar Martínez
---@Fecha creación: 04/06/2026
---@Descripción:    Esquema local del Nodo 1 (Norte) — PDB eambdd_s1.
+-- Autor       : erick
+-- Fecha        : 2026-06-04
+-- Descripción  : Esquema local del Nodo 1 (Norte) — PDB eambdd_s1.
 --                 Fragmentos: SUCURSAL_F1, SUCURSAL_TALLER_F1, SUCURSAL_VENTA_F1,
 --                             LAPTOP_F1, LAPTOP_INVENTARIO_F2,
 --                             HISTORICO_STATUS_LAPTOP_F2, SERVICIO_LAPTOP_F1.

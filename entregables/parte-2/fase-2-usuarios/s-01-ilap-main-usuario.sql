@@ -1,6 +1,6 @@
---@Autor:          Erick Yair Aguilar Martínez
---@Fecha creación: 04/06/2026
---@Descripción:    Creación del usuario ilap_bdd en los 4 nodos de la BDD.
+-- Autor       : erick
+-- Fecha        : 2026-06-04
+-- Descripción  : Creación del usuario ilap_bdd en los 4 nodos de la BDD.
 --                 Ejecutar desde SQL*Plus con: sqlplus /nolog @s-01-ilap-main-usuario.sql
 
 clear screen

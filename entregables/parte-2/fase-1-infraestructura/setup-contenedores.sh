@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # setup-contenedores.sh
-# @Autor:          Erick Yair Aguilar Martínez
-# @Fecha creación: 04/06/2026
-# @Descripción:    Configuración de infraestructura Docker para BDD distribuida
+# Autor       : erick
+# Fecha        : 2026-06-04
+# Descripción  : Configuración de infraestructura Docker para BDD distribuida
 #                  (equipo individual, iniciales: eam).
 #
 # Topología:

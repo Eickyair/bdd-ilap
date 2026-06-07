@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # 05-run-ddl.sh  — IDEMPOTENTE
-# @Autor:          Erick Yair Aguilar Martínez
-# @Fecha creación: 04/06/2026
-# @Descripción:    Crea los fragmentos locales en los 4 nodos ejecutando
+# Autor       : erick
+# Fecha        : 2026-06-04
+# Descripción  : Crea los fragmentos locales en los 4 nodos ejecutando
 #                  s-03-ilap-main-ddl.sql. Cada DDL individual inicia con
 #                  DROP TABLE IF EXISTS en orden inverso, lo que garantiza
 #                  idempotencia total.

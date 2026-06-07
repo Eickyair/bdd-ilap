@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # 04-run-ligas.sh  — IDEMPOTENTE
-# @Autor:          Erick Yair Aguilar Martínez
-# @Fecha creación: 04/06/2026
-# @Descripción:    Crea los 12 database links (3 por nodo) ejecutando
+# Autor       : erick
+# Fecha        : 2026-06-04
+# Descripción  : Crea los 12 database links (3 por nodo) ejecutando
 #                  s-02-ilap-ligas.sql. El script usa DROP DATABASE LINK IF
 #                  EXISTS antes de cada CREATE, por lo que es idempotente.
 #

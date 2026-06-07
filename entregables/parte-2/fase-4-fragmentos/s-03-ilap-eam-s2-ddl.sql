@@ -1,6 +1,6 @@
---@Autor:          Erick Yair Aguilar Martínez
---@Fecha creación: 04/06/2026
---@Descripción:    Esquema local del Nodo 2 (Este) — PDB eambdd_s2.
+-- Autor       : erick
+-- Fecha        : 2026-06-04
+-- Descripción  : Esquema local del Nodo 2 (Este) — PDB eambdd_s2.
 --                 Fragmentos: SUCURSAL_F2, SUCURSAL_TALLER_F2, SUCURSAL_VENTA_F2,
 --                             LAPTOP_F2, HISTORICO_STATUS_LAPTOP_F1,
 --                             SERVICIO_LAPTOP_F2.

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # run-parte-2.sh  — ORQUESTADOR MAESTRO — IDEMPOTENTE
-# @Autor:          Erick Yair Aguilar Martínez
-# @Fecha creación: 04/06/2026
-# @Descripción:    Ejecuta todas las fases del Proyecto Final Parte 2 en orden.
+# Autor       : erick
+# Fecha        : 2026-06-04
+# Descripción  : Ejecuta todas las fases del Proyecto Final Parte 2 en orden.
 #                  Puede interrumpirse y re-ejecutarse desde cualquier punto;
 #                  cada fase es idempotente.
 #

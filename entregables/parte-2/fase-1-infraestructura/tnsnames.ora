@@ -1,8 +1,8 @@
 -- ---------------------------------------------------------------------------
 -- tnsnames.ora
--- @Autor:          Erick Yair Aguilar Martínez
--- @Fecha creación: 04/06/2026
--- @Descripción:    Aliases TNS para las 4 PDBs de la BDD distribuida iLap.
+-- Autor       : erick
+-- Fecha        : 2026-06-04
+-- Descripción  : Aliases TNS para las 4 PDBs de la BDD distribuida iLap.
 --                  Copiar este archivo en AMBOS contenedores en:
 --                  $ORACLE_HOME/network/admin/tnsnames.ora
 --

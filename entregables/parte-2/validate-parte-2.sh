@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# v-01-run-validations.sh
-# @Autor:          Erick Yair Aguilar Martínez
-# @Fecha creación: 04/06/2026
-# @Descripción:    Ejecuta todas las validaciones de consistencia de la BDD
+# validate-parte-2.sh
+# Autor       : erick
+# Fecha        : 2026-06-04
+# Descripción  : Ejecuta todas las validaciones de consistencia de la BDD
 #                  distribuida iLap y genera un reporte en pantalla y en
 #                  entregables/parte-2/validation-report.txt.
 #

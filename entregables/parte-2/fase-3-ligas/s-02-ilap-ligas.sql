@@ -1,6 +1,6 @@
---@Autor:          Erick Yair Aguilar Martínez
---@Fecha creación: 04/06/2026
---@Descripción:    Creación de database links en los 4 nodos de la BDD.
+-- Autor       : erick
+-- Fecha        : 2026-06-04
+-- Descripción  : Creación de database links en los 4 nodos de la BDD.
 --                 3 ligas por nodo, 12 en total. La comunicación es bidireccional.
 --                 El nombre de cada liga es el nombre global de la PDB destino.
 --                 No se especifican credenciales porque ilap_bdd existe en los 4 nodos.

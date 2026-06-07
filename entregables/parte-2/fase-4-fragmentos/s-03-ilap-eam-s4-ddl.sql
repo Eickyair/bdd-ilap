@@ -1,6 +1,6 @@
---@Autor:          Erick Yair Aguilar Martínez
---@Fecha creación: 04/06/2026
---@Descripción:    Esquema local del Nodo 4 (Sur) — PDB eambdd_s4.
+-- Autor       : erick
+-- Fecha        : 2026-06-04
+-- Descripción  : Esquema local del Nodo 4 (Sur) — PDB eambdd_s4.
 --                 Fragmentos: SUCURSAL_F4, SUCURSAL_TALLER_F4, SUCURSAL_VENTA_F4,
 --                             LAPTOP_F5 (fotos globales), LAPTOP_F4,
 --                             SERVICIO_LAPTOP_F4.

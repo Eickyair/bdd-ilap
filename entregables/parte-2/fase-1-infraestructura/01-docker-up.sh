@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # 01-docker-up.sh  — IDEMPOTENTE
-# @Autor:          Erick Yair Aguilar Martínez
-# @Fecha creación: 04/06/2026
-# @Descripción:    Crea y levanta la infraestructura Docker para la BDD
+# Autor       : erick
+# Fecha        : 2026-06-04
+# Descripción  : Crea y levanta la infraestructura Docker para la BDD
 #                  distribuida iLap (equipo individual, iniciales: eam).
 #                  Puede ejecutarse múltiples veces sin efectos secundarios.
 #

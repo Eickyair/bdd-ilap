@@ -1,6 +1,6 @@
---@Autor:          Erick Yair Aguilar Martínez
---@Fecha creación: 04/06/2026
---@Descripción:    Eliminación y creación del usuario ilap_bdd en una PDB.
+-- Autor       : erick
+-- Fecha        : 2026-06-04
+-- Descripción  : Eliminación y creación del usuario ilap_bdd en una PDB.
 --                 Invocar desde s-01-ilap-main-usuario.sql conectado como sysdba.
 
 prompt Creando al usuario ilap_bdd

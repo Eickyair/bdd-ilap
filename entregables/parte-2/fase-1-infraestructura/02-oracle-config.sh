@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # 02-oracle-config.sh  — IDEMPOTENTE
-# @Autor:          Erick Yair Aguilar Martínez
-# @Fecha creación: 04/06/2026
-# @Descripción:    Inicia Oracle CDB en ambos contenedores y garantiza que
+# Autor       : erick
+# Fecha        : 2026-06-04
+# Descripción  : Inicia Oracle CDB en ambos contenedores y garantiza que
 #                  los 4 nodos estén disponibles:
 #                    c1-bdd-proy-eam → eambdd_s1, eambdd_s2
 #                    c2-bdd-proy-eam → eambdd_s3, eambdd_s4

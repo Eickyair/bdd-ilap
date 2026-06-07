@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # 03-run-usuarios.sh  — IDEMPOTENTE
-# @Autor:          Erick Yair Aguilar Martínez
-# @Fecha creación: 04/06/2026
-# @Descripción:    Crea el usuario ilap_bdd en los 4 nodos ejecutando
+# Autor       : erick
+# Fecha        : 2026-06-04
+# Descripción  : Crea el usuario ilap_bdd en los 4 nodos ejecutando
 #                  s-01-ilap-main-usuario.sql dentro del contenedor c1.
 #                  El script SQL usa DROP USER IF EXISTS, por lo que es
 #                  seguro ejecutarlo múltiples veces.

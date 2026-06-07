@@ -1,6 +1,6 @@
---@Autor:          Erick Yair Aguilar Martínez
---@Fecha creación: 04/06/2026
---@Descripción:    Esquema local del Nodo 3 (Oeste) — PDB eambdd_s3.
+-- Autor       : erick
+-- Fecha        : 2026-06-04
+-- Descripción  : Esquema local del Nodo 3 (Oeste) — PDB eambdd_s3.
 --                 Fragmentos: SUCURSAL_F3, SUCURSAL_TALLER_F3, SUCURSAL_VENTA_F3,
 --                             LAPTOP_F3, LAPTOP_INVENTARIO_F1 (datos sensibles),
 --                             SERVICIO_LAPTOP_F3.

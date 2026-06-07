@@ -1,6 +1,6 @@
---@Autor:          Erick Yair Aguilar Martínez
---@Fecha creación: 04/06/2026
---@Descripción:    Validaciones de consistencia de la BDD distribuida iLap.
+-- Autor       : erick
+-- Fecha        : 2026-06-04
+-- Descripción  : Validaciones de consistencia de la BDD distribuida iLap.
 --                 Verifica en cada nodo: usuario, database links, tablas
 --                 de fragmento, catálogos y conectividad vía DB links.
 --                 Invocar desde v-01-run-validations.sh.
