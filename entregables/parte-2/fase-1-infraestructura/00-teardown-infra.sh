@@ -40,7 +40,7 @@ set -uo pipefail
 C1="c1-bdd-proy-eam"
 C2="c2-bdd-proy-eam"
 NETWORK="bdd-proy-net"
-STOP_TIMEOUT=12        # segundos — ventana corta de cierre limpio
+STOP_TIMEOUT=6        # segundos — ventana corta de cierre limpio
 RESTART_TIMEOUT=5      # segundos — suficiente tras desactivar restart policy
 
 PROTECTED_IMAGE="bdd-eam:1.0"
