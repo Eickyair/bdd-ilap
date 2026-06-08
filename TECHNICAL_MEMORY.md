@@ -8,6 +8,7 @@
 | 2026-06-04 | Erick Yair Aguilar Martínez | 2.0 | Implementación de Parte 2: infraestructura Docker, tnsnames, usuario ilap_bdd, database links y DDL de fragmentos. |
 | 2026-06-07 | GitHub Copilot | 2.1 | Endurecimiento de Oracle Net en Parte 2: `/etc/hosts` se normaliza en ambos contenedores, `tnsnames.ora` y `listener.ora` se dejan legibles para `oracle`, y el listener ahora hace bind en `0.0.0.0` para evitar fallos por hostnames heredados de la imagen base. |
 | 2026-06-07 | GitHub Copilot | 2.2 | Corrección de registro dinámico Oracle Net: `local_listener` ya no depende del alias compartido `LISTENER_FREE`; `02-oracle-config.sh` fija `local_listener` a la dirección propia de cada contenedor y ejecuta `alter system register` para registrar `eambdd_s1..s4` en su listener local. |
+| 2026-06-07 | GitHub Copilot | 3.0 | Implementación de Parte 3 completa: Fase 1 redefine sinónimos lógicos `*_f<n>` y `*_r<n>` con validador; Fase 2 crea vistas globales, tablas temporales y funciones BLOB; Fase 3 agrega triggers `INSTEAD OF` y un validador estructural separado para la entrega. |
 
 ---
 
@@ -101,3 +102,33 @@ Se define un entorno de bases de datos distribuidas integrado por **4 nodos**. P
 *   **Referencias nativas (cross-node):** Las FK que cruzan nodos se eliminan como restricción física pero el campo se conserva. Están marcadas con el comentario `-- native: cross-node` en cada DDL.
 *   **Orden de creación:** catálogos replicados → `STATUS_LAPTOP` → fragmentos de `SUCURSAL` → subtipos → `LAPTOP_F5` (solo Nodo 4) → fragmentos de `LAPTOP` → fragmentos de inventario/histórico → fragmentos de `SERVICIO_LAPTOP`.
 *   **`DROP TABLE IF EXISTS`:** Cada DDL inicia con drops en orden inverso usando sintaxis Oracle 23ai; garantiza idempotencia.
+
+---
+
+## 5. Transparencia de Distribución (Parte 3)
+
+### 5.1. Fase 1 — Sinónimos lógicos
+
+* **Convención adoptada:** la capa de transparencia expone fragmentos con la convención `*_f<n>` y tablas replicadas con `*_r<n>`, siguiendo literalmente la guía de `pf-03.pdf`. La ubicación física `*_eam_s<n>` queda encapsulada detrás del sinónimo.
+* **Regla operativa:** cada PDB crea sinónimos tanto locales como remotos para que el mismo nombre lógico resuelva en cualquier nodo. Para tablas replicadas, `r1` siempre apunta a la réplica local del nodo actual y `r2..r4` a las demás réplicas.
+* **Cobertura:** `SUCURSAL`, `SUCURSAL_TALLER`, `SUCURSAL_VENTA`, `LAPTOP`, `LAPTOP_INVENTARIO`, `HISTORICO_STATUS_LAPTOP`, `SERVICIO_LAPTOP` y los cuatro catálogos replicados `TIPO_*`.
+* **Objetos generados:** `s-04-ilap-main-sinonimos.sql`, `s-04-ilap-valida-sinonimos.sql`, `s-04-ilap-eam-s1-sinonimos.sql`, `s-04-ilap-eam-s2-sinonimos.sql`, `s-04-ilap-eam-s3-sinonimos.sql`, `s-04-ilap-eam-s4-sinonimos.sql` y `06-run-sinonimos.sh`.
+
+### 5.2. Fase 2 — Vistas globales y soporte BLOB
+
+* **Vistas comunes:** `TIPO_PROCESADOR`, `TIPO_TARJETA_VIDEO`, `TIPO_ALMACENAMIENTO`, `TIPO_MONITOR`, `SUCURSAL`, `SUCURSAL_TALLER`, `SUCURSAL_VENTA`, `LAPTOP_INVENTARIO` y `HISTORICO_STATUS_LAPTOP` se reconstruyen con columnas explícitas y `UNION ALL` o `JOIN` según el esquema de fragmentación.
+* **Manejo BLOB:** `LAPTOP` y `SERVICIO_LAPTOP` usan tablas temporales `TI_*` y `TS_*` junto con funciones `GET_REMOTE_*_BY_ID` para resolver acceso remoto a `FOTO` y `FACTURA`.
+* **Vistas por PDB:** cada nodo tiene su propio script `s-05-ilap-eam-s<n>-vistas-blob.sql` para decidir cuándo leer el BLOB localmente y cuándo invocar una función remota.
+* **Objetos generados:** `s-05-ilap-vistas.sql`, `s-05-ilap-tablas-temporales.sql`, `s-05-ilap-funciones-blob.sql`, `s-05-ilap-eam-s1-vistas-blob.sql`, `s-05-ilap-eam-s2-vistas-blob.sql`, `s-05-ilap-eam-s3-vistas-blob.sql`, `s-05-ilap-eam-s4-vistas-blob.sql`, `s-05-ilap-main-vistas.sql` y `07-run-vistas.sh`.
+
+### 5.3. Fase 3 — Triggers `INSTEAD OF`
+
+* **Tablas fragmentadas:** `SUCURSAL`, `SUCURSAL_TALLER`, `SUCURSAL_VENTA`, `LAPTOP`, `LAPTOP_INVENTARIO`, `HISTORICO_STATUS_LAPTOP` y `SERVICIO_LAPTOP` implementan transparencia para `INSERT` y `DELETE`; `UPDATE` lanza `-20030`.
+* **Errores controlados:** `-20010` para violaciones del esquema de fragmentación horizontal primaria, `-20020` para no localizar el fragmento padre en fragmentación derivada, `-20030` para `UPDATE` no implementado en tablas fragmentadas y `-20040` para fallos de replicación síncrona en catálogos `TIPO_*`.
+* **Tablas replicadas:** los catálogos `TIPO_*` propagan `INSERT`, `UPDATE` y `DELETE` de forma síncrona a las 4 réplicas mediante los alias `r1..r4`.
+* **Objetos generados:** `s-06-ilap-grant-create-trigger.sql`, `s-06-ilap-main-triggers.sql`, los `s-06-ilap-trigger-*.sql` y `08-run-triggers.sh`.
+
+### 5.4. Validación estructural de la Parte 3
+
+* **Validador separado:** se añadió el par `09-validate-parte-3.sql` y `09-validate-parte-3.sh`.
+* **Cobertura del validador:** revisa sinónimos, vistas, tablas temporales, funciones y triggers, además de listar objetos inválidos por PDB.

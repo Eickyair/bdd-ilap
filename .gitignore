@@ -1,12 +1,15 @@
 # Recursos base del curso (PDFs, apuntes, prácticas)
 /bdd-base/
-*.pdf
+# *.pdf
 
 # Materiales del profesor — no forman parte de la implementación
-/proyecto-final/
+# /proyecto-final/
 
 # Configuración local del IDE
 /.vscode/
 
 # Credenciales y configuración local del agente (NO subir a git)
 CLAUDE.local.md
+
+
+entregables/parte-2/validation-report.txt

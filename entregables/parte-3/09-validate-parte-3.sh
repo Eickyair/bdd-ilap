@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# 09-validate-parte-3.sh
+# Autor       : erick
+# Fecha        : 2026-06-07
+# Descripción  : Ejecuta la validación estructural de la Parte 3 sobre los 4
+#                  nodos, revisando sinónimos, vistas y triggers.
+# ---------------------------------------------------------------------------
+set -euo pipefail
+
+C1="c1-bdd-proy-eam"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SQL="${SCRIPT_DIR}/09-validate-parte-3.sql"
+
+RED='\033[0;31m'
+GRN='\033[0;32m'
+CYA='\033[0;36m'
+BLU='\033[0;34m'
+BOLD='\033[1m'
+RST='\033[0m'
+
+log()  { echo -e "  ${CYA}[INFO]${RST}  $*"; }
+ok()   { echo -e "  ${GRN}[OK]${RST}    $*"; }
+die()  { echo -e "  ${RED}[ERROR]${RST} $*" >&2; exit 1; }
+
+echo ""
+echo -e "${BOLD}${BLU}╔══════════════════════════════════════════════════════╗${RST}"
+echo -e "${BOLD}${BLU}║      VALIDADOR ESTRUCTURAL · Parte 3 · iLap          ║${RST}"
+echo -e "${BOLD}${BLU}╚══════════════════════════════════════════════════════╝${RST}"
+echo ""
+
+[ "$(docker inspect "${C1}" --format '{{.State.Running}}' 2>/dev/null)" = "true" ] \
+    || die "Contenedor ${C1} no está corriendo. Ejecuta las fases anteriores primero."
+
+log "Ejecutando 09-validate-parte-3.sql desde ${C1}."
+set +e
+timeout 180 docker exec -i "${C1}" su - oracle -c "sqlplus /nolog" <<EOF
+whenever sqlerror exit failure
+@${SQL}
+exit;
+EOF
+rc=$?
+set -e
+
+[ ${rc} -eq 124 ] && die "Timeout (180s): la validación de Parte 3 no terminó."
+[ ${rc} -ne 0 ] && die "Falló la validación de Parte 3 (código: ${rc}). Revisa la salida anterior."
+
+ok "Validación estructural de Parte 3 completada correctamente."
