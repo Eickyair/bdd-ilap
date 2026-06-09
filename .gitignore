@@ -1,15 +1,34 @@
-# Recursos base del curso (PDFs, apuntes, prácticas)
+# ── Recursos base del curso ─────────────────────────────────────────────────
 /bdd-base/
-# *.pdf
 
-# Materiales del profesor — no forman parte de la implementación
-# /proyecto-final/
+# ── PDFs de instrucciones del proyecto (proporcionados por el profesor) ──────
+/proyecto-final/pf-0*.pdf
+/proyecto-final/carga-inicial.zip
+/proyecto-final/scripts-base/
 
-# Configuración local del IDE
-/.vscode/
+# ── Archivos autogenerados ───────────────────────────────────────────────────
+# Logs de ejecucion de scripts
+**/logs/**
 
-# Credenciales y configuración local del agente (NO subir a git)
+# SQLs derivados automaticamente de los *-empty-blob.sql (no son fuente)
+carga-inicial/laptop-1.sql
+carga-inicial/laptop-2.sql
+carga-inicial/servicio_laptop-1.sql
+carga-inicial/servicio_laptop-2.sql
+
+# Binarios e imagenes del paquete oficial (grandes, no deben versionarse)
+carga-inicial/laptops/
+carga-inicial/facturas/
+carga-inicial/*.zip
+**/Thumbs.db*
+entregables/parte-4/fixtures/
+
+# ── Informacion sensible ─────────────────────────────────────────────────────
+# Credenciales y configuracion local del agente
 CLAUDE.local.md
 
-
+# Reporte de validacion de infraestructura (contiene IPs y salidas de red)
 entregables/parte-2/validation-report.txt
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+/.vscode/

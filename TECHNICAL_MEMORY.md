@@ -9,6 +9,8 @@
 | 2026-06-07 | GitHub Copilot | 2.1 | Endurecimiento de Oracle Net en Parte 2: `/etc/hosts` se normaliza en ambos contenedores, `tnsnames.ora` y `listener.ora` se dejan legibles para `oracle`, y el listener ahora hace bind en `0.0.0.0` para evitar fallos por hostnames heredados de la imagen base. |
 | 2026-06-07 | GitHub Copilot | 2.2 | Corrección de registro dinámico Oracle Net: `local_listener` ya no depende del alias compartido `LISTENER_FREE`; `02-oracle-config.sh` fija `local_listener` a la dirección propia de cada contenedor y ejecuta `alter system register` para registrar `eambdd_s1..s4` en su listener local. |
 | 2026-06-07 | GitHub Copilot | 3.0 | Implementación de Parte 3 completa: Fase 1 redefine sinónimos lógicos `*_f<n>` y `*_r<n>` con validador; Fase 2 crea vistas globales, tablas temporales y funciones BLOB; Fase 3 agrega triggers `INSTEAD OF` y un validador estructural separado para la entrega. |
+| 2026-06-07 | GitHub Copilot | 4.0 | Implementación de Parte 4: soporte BLOB con `DIRECTORY` y `fx_carga_blob`, integración del paquete oficial `carga-inicial/`, generación de archivos BLOB y orquestador `run-parte-4.sh`. |
+| 2026-06-08 | Erick Yair Aguilar Martínez | 4.1 | Alineación de Parte 4 con `pf-04.pdf`: regeneración de los 4 archivos de carga BLOB con `fx_carga_blob` aleatorio (`dbms_random`/`round`, 100 reales por tabla, `.png`), `presentacion-5` migrado a procedimiento almacenado `pr_elimina_carga_inicial`, eliminación del paso `ajuste-catalogos` (redundante con DDL actualizado), flag `--validate` en `run-parte-4.sh`, corrección del predicado F1 en el trigger `SUCURSAL` y limpieza del `.gitignore`. |
 
 ---
 
@@ -132,3 +134,32 @@ Se define un entorno de bases de datos distribuidas integrado por **4 nodos**. P
 
 * **Validador separado:** se añadió el par `09-validate-parte-3.sql` y `09-validate-parte-3.sh`.
 * **Cobertura del validador:** revisa sinónimos, vistas, tablas temporales, funciones y triggers, además de listar objetos inválidos por PDB.
+
+---
+
+## 6. Carga de Datos y Presentación Final (Parte 4)
+
+### 6.1. Fase 1 — Soporte BLOB local
+
+* **Privilegio adicional:** `s-01-ilap-usuario.sql` concede `CREATE ANY DIRECTORY` a `ilap_bdd` para habilitar la creación de objetos `DIRECTORY` desde la capa de aplicación.
+* **Objetos generados:** `s-07-ilap-configuracion-soporte-blobs.sql` crea `PROYECTO_FINAL_LAPTOPS_DIR`, `PROYECTO_FINAL_FACTURAS_DIR` y la función `FX_CARGA_BLOB` en cada PDB.
+* **Orquestación:** `s-07-ilap-main-soporte-blobs.sql` ejecuta la configuración en `eambdd_s1..s4`, mientras `07-run-soporte-blobs.sh` automatiza el grant a nivel `SYSDBA` y la compilación desde el contenedor `c1-bdd-proy-eam`.
+
+### 6.2. Fase 2 — Presentación y carga inicial oficial
+
+* **Orquestador SQL:** `s-08-ilap-presentacion-1.sql` recompone toda la BDD hasta Parte 4 reutilizando los scripts de Partes 2 y 3, más el soporte BLOB de `s-07`.
+* **Carga manual:** `s-08-ilap-presentacion-2.sql` conecta a cada PDB, ejecuta `DELETE FROM STATUS_LAPTOP`, invoca `@carga-inicial/status_laptop.sql` y hace `COMMIT`.
+* **Carga transparente:** `s-08-ilap-presentacion-3.sql` reproduce la secuencia de `pf-04.pdf`: limpieza inicial por dependencias, deshabilitado temporal de `FK_LAPTOP_F4_F5_REMP` en `eambdd_s4`, ejecución de los SQL oficiales de `carga-inicial/` vía vistas globales y reactivación de la restricción al final.
+* **Soporte de binarios:** `s-08-ilap-presentacion-3.sh` prepara `laptops` y `facturas` en `/tmp/bdd/proyecto-final/imagenes`, aceptando tanto el ZIP oficial como la carpeta ya descomprimida.
+* **Carga BLOB alineada al validador oficial (2026-06-08):** se generaron `carga-inicial/laptop-1.sql`, `carga-inicial/laptop-2.sql`, `carga-inicial/servicio_laptop-1.sql` y `carga-inicial/servicio_laptop-2.sql` a partir de los `*-empty-blob.sql` siguiendo la pág. 10 de `pf-04.pdf`. En `laptop-1.sql` y `servicio_laptop-1.sql` los **primeros 100 inserts** sustituyen `empty_blob()` por `FX_CARGA_BLOB('PROYECTO_FINAL_LAPTOPS_DIR', 'lap'||round(dbms_random.value(1,40))||'.png')` y `FX_CARGA_BLOB('PROYECTO_FINAL_FACTURAS_DIR', 'fa'||round(dbms_random.value(1,40))||'.png')` respectivamente; los 300 inserts restantes y los archivos `-2` conservan `empty_blob()`. Resultado: 100 BLOB reales en `LAPTOP` y 100 en `SERVICIO_LAPTOP`, umbral verificado por `s-08-ilap-presentacion-4.plb`.
+* **Eliminación transparente vía procedimiento almacenado (2026-06-08):** `s-08-ilap-presentacion-5.sql` crea `CREATE OR REPLACE PROCEDURE pr_elimina_carga_inicial` que ejecuta los `DELETE` en orden de dependencias con `COMMIT` y `ROLLBACK`+`RAISE` ante cualquier error. Se deshabilita temporalmente `FK_LAPTOP_F4_F5_REMP` en `eambdd_s4` antes del borrado y se reactiva al final.
+* **Corrección del trigger `SUCURSAL` (2026-06-08):** `t_dml_sucursal` enrutaba a `SUCURSAL_F1` solo cuando `zona='NO'`, ignorando sucursales con ambas funciones en zonas EA/WS/SO (→ `ORA-20010`). Se restauró el predicado oficial `F1 = (ES_TALLER=1 AND ES_VENTA=1) OR zona='NO'` en las ramas INSERT y DELETE.
+
+### 6.3. Paquete oficial y automatización local
+
+* **Paquete oficial:** `carga-inicial/` contiene los SQL fuente y sus carpetas de imágenes extraídas; `run-parte-4.sh` acepta ZIP o carpeta, depura archivos no `png` y copia `lap*.png` / `fa*.png` a `/tmp/bdd/proyecto-final/imagenes/{laptops,facturas}` en ambos contenedores.
+* **Archivos derivados ignorados en git:** `carga-inicial/laptop-1.sql`, `laptop-2.sql`, `servicio_laptop-1.sql` y `servicio_laptop-2.sql` se listan en `.gitignore` por ser generados desde los `*-empty-blob.sql`; se regeneran ejecutando el script Python de la sesión.
+* **Logs de ejecución:** `run-parte-4.sh` genera logs en `entregables/parte-4/logs/` con sello de tiempo (ignorados por `.gitignore`).
+* **Ejecución interna en contenedores:** `run-parte-4.sh` copia `carga-inicial/` y `fase-2-presentacion/` a `/tmp/bdd/proyecto-final/workdir` dentro de ambos contenedores para evitar problemas de permisos del usuario `oracle`.
+* **Flag `--validate`:** `run-parte-4.sh -v` ejecuta automáticamente Presentación 4 (INSERT + replicación) en las 4 PDBs, luego Presentación 5 (DELETE) y Presentación 6 (validación DELETE). La validación de DELETE deja la BDD vacía; relanzar sin la flag para repoblar.
+* **Validadores conservados:** `s-08-ilap-presentacion-4.plb` y `s-08-ilap-presentacion-6.plb` son los validadores interactivos oficiales. Para `SERVICIO_LAPTOP` la técnica vigente es `S` (fragmentación derivada por `SUCURSAL_TALLER`).
