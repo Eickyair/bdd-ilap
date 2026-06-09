@@ -29,7 +29,9 @@ begin
         );
       end if;
 
-      if v_zona = 'NO' then
+      -- Nodo 1: zona NO, o bien sucursal con ambas funciones (taller y venta),
+      -- conforme al predicado oficial F1 = (ES_TALLER=1 AND ES_VENTA=1) OR zona='NO'.
+      if v_zona = 'NO' or (:new.es_taller = 1 and :new.es_venta = 1) then
         insert into sucursal_f1 (
           sucursal_id, clave, es_taller, es_venta, nombre, latitud, longitud, url
         ) values (
@@ -73,7 +75,8 @@ begin
     when deleting then
       v_zona := substr(:old.clave, 3, 2);
 
-      if v_zona = 'NO' then
+      -- Nodo 1: mismo predicado que en INSERT (ambas funciones o zona NO).
+      if v_zona = 'NO' or (:old.es_taller = 1 and :old.es_venta = 1) then
         delete from sucursal_taller_f1 where sucursal_id = :old.sucursal_id;
         delete from sucursal_venta_f1 where sucursal_id = :old.sucursal_id;
         delete from sucursal_f1 where sucursal_id = :old.sucursal_id;
