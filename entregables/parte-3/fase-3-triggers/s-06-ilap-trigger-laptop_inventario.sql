@@ -5,9 +5,16 @@
 
 create or replace trigger t_dml_laptop_inventario
 instead of insert or update or delete on laptop_inventario
+declare
+    v_fecha_status date;
 begin
     case
         when inserting then
+            v_fecha_status := to_date(
+                to_char(:new.fecha_status, 'yyyy-mm-dd hh24:mi:ss'),
+                'yyyy-mm-dd hh24:mi:ss'
+            );
+
             insert into laptop_inventario_f1 (
                 laptop_id, rfc_cliente, num_tarjeta
             ) values (
@@ -17,7 +24,7 @@ begin
             insert into laptop_inventario_f2 (
                 laptop_id, fecha_status, sucursal_id, status_laptop_id
             ) values (
-                :new.laptop_id, :new.fecha_status, :new.sucursal_id, :new.status_laptop_id
+                :new.laptop_id, v_fecha_status, :new.sucursal_id, :new.status_laptop_id
             );
 
         when updating then

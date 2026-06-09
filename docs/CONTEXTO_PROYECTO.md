@@ -42,29 +42,31 @@ Diseñar, implementar y optimizar una Base de Datos Distribuida de **4 nodos** c
 ## Las 4 partes del proyecto
 - **Parte 1 — Diseño (COMPLETADA).** Esquema global, tabla de fragmentación, modelos ER locales (Crow's Foot) por nodo, tabla de asignación de sitios. Documentado en `entregables/PROYECTO_FINAL_PARTE_1.md`.
 - **Parte 2 — Infraestructura y DDL (COMPLETADA).** Scripts en `entregables/parte-2/`:
-  - `s-01-ilap-usuario.sql` — crea usuario `ilap_bdd` con 7 privilegios mínimos
+  - `s-01-ilap-usuario.sql` — crea usuario `ilap_bdd` con privilegios de aplicación y `CREATE ANY DIRECTORY`
   - `s-01-ilap-main-usuario.sql` — ejecuta el anterior en los 4 nodos
   - `s-02-ilap-ligas.sql` — 12 database links (3 por nodo, bidireccionales)
   - `s-03-ilap-eam-s{1..4}-ddl.sql` — DDL de fragmentos por nodo (~11–12 tablas c/u)
   - `s-03-ilap-main-ddl.sql` — orquestador DDL
-- **Parte 3 — Transparencia de distribución (PENDIENTE, siguiente paso).**
+- **Parte 3 — Transparencia de distribución (COMPLETADA).**
   - Sinónimos `s-04-ilap-<pdb>-sinonimos.sql` — ocultan sufijos (`sucursal_f1` → `sucursal_f1_eam_s1`; replicadas: `tipo_monitor_r1..r4`)
   - Vistas globales `s-05-ilap-vistas.sql` — reconstruyen tablas completas con `UNION ALL` sobre los sinónimos; BLOB/CLOB con manejo especial (tablas temporales y funciones)
   - Triggers DML `s-06-ilap-triggers.sql` — `INSTEAD OF` para INSERT/DELETE sobre vistas; en replicadas el trigger propaga a las 4 réplicas de forma síncrona
   - Scripts main orquestadores de sinónimos, vistas y triggers
-- **Parte 4 — Carga de datos y presentación final (PENDIENTE).**
+- **Parte 4 — Carga de datos y presentación final (COMPLETADA).**
   - `s-07-ilap-configuracion-soporte-blobs.sql` — objetos `DIRECTORY` + función `fx_carga_blob`
+  - `s-07-ilap-main-soporte-blobs.sql` — orquestador SQL para los 4 nodos
   - `s-08-ilap-presentacion-1.sql` — orquestador maestro (s-01 a s-07)
   - `s-08-ilap-presentacion-2.sql` — carga manual de `STATUS_LAPTOP`
   - `s-08-ilap-presentacion-3.sql` — carga con transparencia (INSERT vía vistas)
   - `s-08-ilap-presentacion-4.sql` — validación INSERT + replicadas (`.plb` ya existe)
   - `s-08-ilap-presentacion-5.sql` — eliminación transparente (DELETE vía vistas)
   - `s-08-ilap-presentacion-6.sql` — validación DELETE (`.plb` ya existe)
+  - `run-parte-4.sh` — descomprime `carga-inicial/`, prepara BLOBs oficiales, configura directorios y ejecuta la carga base oficial
 
 ## Estado actual
 | Fase | Estado |
 |---|---|
 | Parte 1: Diseño de fragmentación | Completada |
 | Parte 2: Docker + usuarios + ligas + DDL | Completada |
-| Parte 3: Sinónimos + Vistas + Triggers | **Pendiente — siguiente paso** |
-| Parte 4: Soporte BLOB + carga + presentación | Pendiente |
+| Parte 3: Sinónimos + Vistas + Triggers | Completada |
+| Parte 4: Soporte BLOB + carga + presentación | Completada |

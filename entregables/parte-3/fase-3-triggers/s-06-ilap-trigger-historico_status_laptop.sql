@@ -5,21 +5,28 @@
 
 create or replace trigger t_dml_historico_status_laptop
 instead of insert or update or delete on historico_status_laptop
+declare
+  v_fecha_status date;
 begin
   case
     when inserting then
-      if :new.fecha_status < to_date('2010-01-01', 'yyyy-mm-dd') then
+      v_fecha_status := to_date(
+        to_char(:new.fecha_status, 'yyyy-mm-dd hh24:mi:ss'),
+        'yyyy-mm-dd hh24:mi:ss'
+      );
+
+      if v_fecha_status < to_date('2010-01-01', 'yyyy-mm-dd') then
         insert into historico_status_laptop_f1 (
           historico_status_laptop_id, fecha_status, status_laptop_id, laptop_id
         ) values (
-          :new.historico_status_laptop_id, :new.fecha_status,
+          :new.historico_status_laptop_id, v_fecha_status,
           :new.status_laptop_id, :new.laptop_id
         );
       else
         insert into historico_status_laptop_f2 (
           historico_status_laptop_id, fecha_status, status_laptop_id, laptop_id
         ) values (
-          :new.historico_status_laptop_id, :new.fecha_status,
+          :new.historico_status_laptop_id, v_fecha_status,
           :new.status_laptop_id, :new.laptop_id
         );
       end if;

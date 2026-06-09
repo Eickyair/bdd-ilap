@@ -29,7 +29,7 @@ drop table if exists tipo_procesador_r_eam_s1          cascade constraints purge
 
 create table tipo_procesador_r_eam_s1 (
     tipo_procesador_id    number(10, 0)   not null,
-    clave                 varchar2(20)    not null,
+    clave                 varchar2(40)    not null,
     descripcion           varchar2(200)   not null,
     constraint pk_tipo_proc_r_eam_s1 primary key (tipo_procesador_id)
 );
@@ -87,7 +87,7 @@ create table sucursal_f1_eam_s1 (
 create table sucursal_taller_f1_eam_s1 (
     sucursal_id          number(10, 0)  not null,
     dia_descanso         number(1, 0),
-    telefono_atencion    varchar2(15),
+    telefono_atencion    varchar2(20),
     constraint pk_suc_taller_f1_eam_s1 primary key (sucursal_id),
     constraint fk_suc_taller_f1_eam_s1 foreign key (sucursal_id)
         references sucursal_f1_eam_s1 (sucursal_id)
@@ -114,7 +114,7 @@ create table laptop_f1_eam_s1 (
     laptop_id               number(10, 0)  not null,
     num_serie               varchar2(20)   not null,
     cantidad_ram            number(5, 0),
-    caracteristicas_extras  varchar2(500),
+    caracteristicas_extras  varchar2(600),
     tipo_tarjeta_video_id   number(10, 0)  not null,
     tipo_procesador_id      number(10, 0)  not null,
     tipo_almacenamiento_id  number(10, 0)  not null,

@@ -13,7 +13,23 @@ begin
     when inserting then
       v_zona := substr(:new.clave, 3, 2);
 
-      if (:new.es_venta = 1 and :new.es_taller = 1) or v_zona = 'NO' then
+      if nvl(:new.es_taller, -1) not in (0, 1)
+         or nvl(:new.es_venta, -1) not in (0, 1)
+         or (:new.es_taller = 0 and :new.es_venta = 0) then
+        raise_application_error(
+          -20010,
+          'El registro no cumple con el esquema de fragmentacion horizontal primaria de SUCURSAL.'
+        );
+      end if;
+
+      if v_zona not in ('NO', 'EA', 'WS', 'SO') then
+        raise_application_error(
+          -20010,
+          'El registro no cumple con el esquema de fragmentacion horizontal primaria de SUCURSAL.'
+        );
+      end if;
+
+      if v_zona = 'NO' then
         insert into sucursal_f1 (
           sucursal_id, clave, es_taller, es_venta, nombre, latitud, longitud, url
         ) values (
@@ -57,7 +73,7 @@ begin
     when deleting then
       v_zona := substr(:old.clave, 3, 2);
 
-      if (:old.es_venta = 1 and :old.es_taller = 1) or v_zona = 'NO' then
+      if v_zona = 'NO' then
         delete from sucursal_taller_f1 where sucursal_id = :old.sucursal_id;
         delete from sucursal_venta_f1 where sucursal_id = :old.sucursal_id;
         delete from sucursal_f1 where sucursal_id = :old.sucursal_id;
