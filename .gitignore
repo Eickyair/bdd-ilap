@@ -10,18 +10,14 @@
 # Logs de ejecucion de scripts
 **/logs/**
 
-# SQLs derivados automaticamente de los *-empty-blob.sql (no son fuente)
-carga-inicial/laptop-1.sql
-carga-inicial/laptop-2.sql
-carga-inicial/servicio_laptop-1.sql
-carga-inicial/servicio_laptop-2.sql
-
-# Binarios e imagenes del paquete oficial (grandes, no deben versionarse)
+# Directorios de imagenes extraidas (se regeneran desde los ZIPs trackeados)
 carga-inicial/laptops/
 carga-inicial/facturas/
-carga-inicial/*.zip
-**/Thumbs.db*
+
+# Directorio de fixtures de desarrollo (no referenciado por ningun script)
 entregables/parte-4/fixtures/
+
+**/Thumbs.db*
 
 # ── Informacion sensible ─────────────────────────────────────────────────────
 # Credenciales y configuracion local del agente
