@@ -11,6 +11,7 @@ set -euo pipefail
 C1="c1-bdd-proy-eam"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SQL="${SCRIPT_DIR}/09-validate-parte-3.sql"
+source "${SCRIPT_DIR}/../utils.sh"
 
 RED='\033[0;31m'
 GRN='\033[0;32m'
@@ -34,7 +35,7 @@ echo ""
 
 log "Ejecutando 09-validate-parte-3.sql desde ${C1}."
 set +e
-timeout 180 docker exec -i "${C1}" su - oracle -c "sqlplus /nolog" <<EOF
+timeout 180 "${DOCKER_SQLPLUS}" "${C1}" /nolog <<EOF
 whenever sqlerror exit failure
 @${SQL}
 exit;

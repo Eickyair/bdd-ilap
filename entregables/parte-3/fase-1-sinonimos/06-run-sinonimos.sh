@@ -14,6 +14,7 @@ set -euo pipefail
 C1="c1-bdd-proy-eam"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SQL="${SCRIPT_DIR}/s-04-ilap-main-sinonimos.sql"
+source "${SCRIPT_DIR}/../../utils.sh"
 
 RED='\033[0;31m'
 GRN='\033[0;32m'
@@ -43,7 +44,7 @@ log "Cada nodo recibe alias lógicos *_f<n> y *_r<n> para ocultar ubicación fí
 log "El main también ejecuta un validador básico por conteos en cada PDB."
 
 set +e
-timeout 120 docker exec -i "${C1}" su - oracle -c "sqlplus /nolog" <<EOF
+timeout 120 "${DOCKER_SQLPLUS}" "${C1}" /nolog <<EOF
 whenever sqlerror exit failure
 @${SQL}
 exit;

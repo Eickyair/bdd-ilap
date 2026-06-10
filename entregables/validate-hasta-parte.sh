@@ -40,6 +40,8 @@ RUN_LOG="${LOG_DIR}/validate-hasta-parte-${LOG_STAMP}.log"
 PARTE4_STAGE_DIR="/tmp/bdd/proyecto-final/workdir/entregables/parte-4/fase-2-presentacion"
 GLOBAL_T0=$(date +%s)
 
+source "${SCRIPT_DIR}/utils.sh"
+
 RED='\033[0;31m'
 YEL='\033[1;33m'
 GRN='\033[0;32m'
@@ -112,7 +114,7 @@ run_sqlplus_profesor_insert() {
     log "Tecnica de servicio_laptop enviada al prompt: ${FRAGMENTACION_SERVICIO}"
     log "Log persistente: ${step_log}"
     set +e
-    docker exec -i c1-bdd-proy-eam su - oracle -c "cd '${PARTE4_STAGE_DIR}' && sqlplus /nolog @s-08-ilap-presentacion-4.plb" <<EOF | tee "${step_log}"
+    docker_sqlplus c1-bdd-proy-eam /nolog @"${PARTE4_STAGE_DIR}/s-08-ilap-presentacion-4.plb" <<EOF | tee "${step_log}"
 ${PDB_DEMO}
 ${FRAGMENTACION_SERVICIO}
 EOF
@@ -130,7 +132,7 @@ run_sqlplus_profesor_delete() {
     log "Ejecutando s-08-ilap-presentacion-6.plb en ${PDB_DEMO}"
     log "Log persistente: ${step_log}"
     set +e
-    docker exec -i c1-bdd-proy-eam su - oracle -c "cd '${PARTE4_STAGE_DIR}' && sqlplus /nolog @s-08-ilap-presentacion-6.plb" <<EOF | tee "${step_log}"
+    docker_sqlplus c1-bdd-proy-eam /nolog @"${PARTE4_STAGE_DIR}/s-08-ilap-presentacion-6.plb" <<EOF | tee "${step_log}"
 ${PDB_DEMO}
 EOF
     local rc=${PIPESTATUS[0]}

@@ -16,6 +16,7 @@ set -euo pipefail
 C1="c1-bdd-proy-eam"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SQL="${SCRIPT_DIR}/s-03-ilap-main-ddl.sql"
+source "${SCRIPT_DIR}/../../utils.sh"
 
 # ----------------------------------------------------------------- colores
 RED='\033[0;31m'
@@ -56,7 +57,7 @@ wait_msg "Ejecutando SQL*Plus vía ${C1} (timeout: 300s — 4 nodos, ~45 tablas 
 
 _t0=$(date +%s)
 set +e
-timeout 300 docker exec -i "${C1}" su - oracle -c "sqlplus /nolog" <<EOF
+timeout 300 "${DOCKER_SQLPLUS}" "${C1}" /nolog <<EOF
 whenever sqlerror exit failure
 @${SQL}
 exit;

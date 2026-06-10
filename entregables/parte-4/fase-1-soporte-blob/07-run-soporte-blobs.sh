@@ -14,6 +14,7 @@ SQL_MAIN="${SCRIPT_DIR}/s-07-ilap-main-soporte-blobs.sql"
 LOG_DIR="${PARTE4_LOG_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)/logs}"
 LOG_STAMP="${PARTE4_LOG_STAMP:-$(date +%Y%m%d-%H%M%S)}"
 LOG_FILE="${LOG_DIR}/07-run-soporte-blobs-${LOG_STAMP}.log"
+source "${SCRIPT_DIR}/../../utils.sh"
 
 RED='\033[0;31m'
 YEL='\033[1;33m'
@@ -59,7 +60,7 @@ fi
 
 step "Otorgando CREATE ANY DIRECTORY al usuario ilap_bdd"
 set +e
-timeout 180 docker exec -i "${C1}" su - oracle -c "sqlplus /nolog" <<EOF
+timeout 180 "${DOCKER_SQLPLUS}" "${C1}" /nolog <<EOF
 whenever sqlerror exit failure
 
 prompt ============================================
@@ -97,7 +98,7 @@ set -e
 
 step "Compilando directorios y funcion fx_carga_blob"
 set +e
-timeout 240 docker exec -i "${C1}" su - oracle -c "sqlplus /nolog" <<EOF
+timeout 240 "${DOCKER_SQLPLUS}" "${C1}" /nolog <<EOF
 whenever sqlerror exit failure
 @${SQL_MAIN}
 exit;

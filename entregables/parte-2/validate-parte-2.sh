@@ -23,11 +23,9 @@ C1="c1-bdd-proy-eam"
 C2="c2-bdd-proy-eam"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPORT="${SCRIPT_DIR}/validation-report.txt"
+source "${SCRIPT_DIR}/../utils.sh"
 PASS=0; FAIL=0
 
-trim_sqlplus_output() {
-    tr -d '[:space:]'
-}
 
 _ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
@@ -77,12 +75,14 @@ echo " 2. Accesibilidad de los 4 nodos (ilap_bdd)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for pdb in eambdd_s1 eambdd_s2 eambdd_s3 eambdd_s4; do
-    result=$(docker exec "${C1}" su - oracle -c \
-        "sqlplus -s ilap_bdd/ilap_bdd@${pdb} <<'EOF'
+    result=$(docker_sqlplus "${C1}" -s /nolog <<EOF
+connect ilap_bdd/ilap_bdd@${pdb}
 set heading off feedback off pagesize 0
 select 'UP' from dual;
 exit;
-EOF" 2>/dev/null | trim_sqlplus_output)
+EOF
+2>/dev/null)
+    read -r result <<< "$result"
     check "Conexión ilap_bdd@${pdb}" "${result}" "UP"
 done
 
@@ -95,12 +95,14 @@ echo " 3. Database links creados (esperado: 3 por nodo)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for pdb in eambdd_s1 eambdd_s2 eambdd_s3 eambdd_s4; do
-    cnt=$(docker exec "${C1}" su - oracle -c \
-        "sqlplus -s ilap_bdd/ilap_bdd@${pdb} <<'EOF'
+    cnt=$(docker_sqlplus "${C1}" -s /nolog <<EOF
+connect ilap_bdd/ilap_bdd@${pdb}
 set heading off feedback off pagesize 0
 select count(*) from user_db_links;
 exit;
-EOF" 2>/dev/null | trim_sqlplus_output)
+EOF
+2>/dev/null)
+    cnt=$((cnt))
     check "DB links en ${pdb}" "${cnt}" "3"
 done
 
@@ -115,12 +117,14 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 declare -A EXPECTED_TABLES=([eambdd_s1]=12 [eambdd_s2]=11 [eambdd_s3]=11 [eambdd_s4]=11)
 
 for pdb in eambdd_s1 eambdd_s2 eambdd_s3 eambdd_s4; do
-    cnt=$(docker exec "${C1}" su - oracle -c \
-        "sqlplus -s ilap_bdd/ilap_bdd@${pdb} <<'EOF'
+    cnt=$(docker_sqlplus "${C1}" -s /nolog <<EOF
+connect ilap_bdd/ilap_bdd@${pdb}
 set heading off feedback off pagesize 0
 select count(*) from user_tables;
 exit;
-EOF" 2>/dev/null | trim_sqlplus_output)
+EOF
+2>/dev/null)
+    cnt=$((cnt))
     check "Tablas en ${pdb}" "${cnt}" "${EXPECTED_TABLES[${pdb}]}"
 done
 
@@ -140,12 +144,14 @@ LINKS[eambdd_s4]="eambdd_s1.fi.unam eambdd_s2.fi.unam eambdd_s3.fi.unam"
 
 for src_pdb in eambdd_s1 eambdd_s2 eambdd_s3 eambdd_s4; do
     for link in ${LINKS[${src_pdb}]}; do
-        result=$(docker exec "${C1}" su - oracle -c \
-            "sqlplus -s ilap_bdd/ilap_bdd@${src_pdb} <<EOF
+        result=$(docker_sqlplus "${C1}" -s /nolog <<EOF
+connect ilap_bdd/ilap_bdd@${src_pdb}
 set heading off feedback off pagesize 0
 select 'OK' from dual@${link};
 exit;
-EOF" 2>/dev/null | trim_sqlplus_output)
+EOF
+2>/dev/null)
+        read -r result <<< "$result"
         check "DB link ${src_pdb} → @${link}" "${result}" "OK"
     done
 done
@@ -161,12 +167,14 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 _table_exists() {
     local pdb="$1" tname="$2"
     local cnt
-    cnt=$(docker exec "${C1}" su - oracle -c \
-        "sqlplus -s ilap_bdd/ilap_bdd@${pdb} <<EOF
+    cnt=$(docker_sqlplus "${C1}" -s /nolog <<EOF
+connect ilap_bdd/ilap_bdd@${pdb}
 set heading off feedback off pagesize 0
 select count(*) from user_tables where table_name=upper('${tname}');
 exit;
-EOF" 2>/dev/null | trim_sqlplus_output)
+EOF
+2>/dev/null)
+    cnt=$((cnt))
     echo "${cnt}"
 }
 

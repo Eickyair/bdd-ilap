@@ -12,6 +12,7 @@ C1="c1-bdd-proy-eam"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SQL_GRANT="${SCRIPT_DIR}/s-06-ilap-grant-create-trigger.sql"
 SQL_MAIN="${SCRIPT_DIR}/s-06-ilap-main-triggers.sql"
+source "${SCRIPT_DIR}/../../utils.sh"
 
 RED='\033[0;31m'
 YEL='\033[1;33m'
@@ -56,7 +57,7 @@ log "Ejecutando grants en eambdd_s1, eambdd_s2, eambdd_s3 y eambdd_s4."
 echo -e "  ${DIM}Timeout del grant: 180s${RST}"
 
 set +e
-timeout 180 docker exec -i "${C1}" su - oracle -c "sqlplus /nolog" <<EOF
+timeout 180 "${DOCKER_SQLPLUS}" "${C1}" /nolog <<EOF
 whenever sqlerror exit failure
 
 prompt ============================================
@@ -96,7 +97,7 @@ set -e
 step "Compilando triggers INSTEAD OF en las 4 PDBs"
 log "Script SQL: s-06-ilap-main-triggers.sql"
 set +e
-timeout 240 docker exec -i "${C1}" su - oracle -c "sqlplus /nolog" <<EOF
+timeout 240 "${DOCKER_SQLPLUS}" "${C1}" /nolog <<EOF
 whenever sqlerror exit failure
 @${SQL_MAIN}
 exit;
