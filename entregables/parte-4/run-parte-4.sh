@@ -25,6 +25,7 @@ PART3_TRIGGER_DIR="${SCRIPT_DIR}/../parte-3/fase-3-triggers"
 STAGE_ROOT="/tmp/bdd/proyecto-final/workdir"
 STAGE_PHASE2_DIR="${STAGE_ROOT}/entregables/parte-4/fase-2-presentacion"
 PDB_DEMO="${PDB_DEMO:-eambdd_s1}"
+source "${SCRIPT_DIR}/../utils.sh"
 LOG_DIR="${SCRIPT_DIR}/logs"
 LOG_STAMP="${PARTE4_LOG_STAMP:-$(date +%Y%m%d-%H%M%S)}"
 RUN_LOG="${LOG_DIR}/run-parte-4-${LOG_STAMP}.log"
@@ -33,6 +34,12 @@ _GLOBAL_T0=$(date +%s)
 # Tecnica vigente del proyecto para fragmentar servicio_laptop (Presentacion 4).
 SERVICIO_LAPTOP_TECNICA="S"
 PDB_LIST=(eambdd_s1 eambdd_s2 eambdd_s3 eambdd_s4)
+
+# ---- Reporte Markdown de validaciones ----
+VALIDATION_REPORT="${SCRIPT_DIR}/validacion-parte-4.md"
+# Array para acumular resultados de cada validacion
+declare -a VAL_STEPS
+declare -a VAL_RC
 
 # Procesa la flag de validacion sin romper el argumento posicional SYS_PASS.
 RUN_VALIDATIONS=false
@@ -129,6 +136,134 @@ run_logged_command() {
     return 0
 }
 
+log_validation_result() {
+    # Registra el resultado de una validacion para el reporte Markdown.
+    # Uso: log_validation_result "nombre-paso" "nodo" "comando" "log-file" "rc"
+    local step_name="$1"
+    local node="$2"
+    local cmd="$3"
+    local log_file="$4"
+    local rc="$5"
+    local started="$6"
+    local finished="$7"
+
+    VAL_STEPS+=("${step_name}|${node}|${cmd}|${log_file}|${started}|${finished}")
+    VAL_RC+=("${rc}")
+}
+
+generate_validation_report() {
+    set +e
+    local report="${VALIDATION_REPORT}"
+    local total=${#VAL_STEPS[@]}
+    local passed=0
+    local failed=0
+
+    for rc in "${VAL_RC[@]}"; do
+        if [ "${rc}" -eq 0 ]; then
+            passed=$((passed + 1))
+        else
+            failed=$((failed + 1))
+        fi
+    done
+
+    cat > "${report}" << 'HEADEREOF'
+# Reporte de Validación — Parte 4 · iLap BDD
+
+## Resumen Ejecutivo
+
+HEADEREOF
+
+    cat >> "${report}" << EOF
+| Métrica | Valor |
+|---------|-------|
+| Fecha de ejecución | ${LOG_STAMP} |
+| Total de validaciones | ${total} |
+| Aprobadas | ${passed} |
+| Fallidas | ${failed} |
+| PDBs validadas | eambdd_s1, eambdd_s2, eambdd_s3, eambdd_s4 |
+| Técnica de fragmentación (servicio_laptop) | ${SERVICIO_LAPTOP_TECNICA} |
+
+## Detalle de Validaciones
+
+EOF
+
+    local idx=0
+    for entry in "${VAL_STEPS[@]}"; do
+        IFS='|' read -r step_name node cmd log_file started finished <<< "${entry}"
+        local rc="${VAL_RC[$idx]}"
+        local status_icon
+        local status_text
+        if [ "${rc}" -eq 0 ]; then
+            status_icon="✅"
+            status_text="APROBADA"
+        else
+            status_icon="❌"
+            status_text="FALLIDA"
+        fi
+
+        cat >> "${report}" << EOF
+---
+### ${status_icon} ${step_name} — ${status_text}
+
+| Campo | Detalle |
+|-------|---------|
+| **Nodo** | ${node} |
+| **Comando ejecutado** | \`${cmd}\` |
+| **Inicio** | ${started} |
+| **Fin** | ${finished} |
+| **Código de salida** | ${rc} |
+
+**Salida capturada:**
+
+EOF
+
+        if [ -f "${log_file}" ]; then
+            cat >> "${report}" << 'SQLEOF'
+```sql
+SQLEOF
+            # Eliminar lineas vacias repetidas y normalizar blank lines
+            sed '/^$/d' "${log_file}" | sed 's/^/  /' >> "${report}"
+            cat >> "${report}" << 'SQLEOF'
+```
+SQLEOF
+        else
+            cat >> "${report}" << 'SQLEOF'
+*(Log no disponible — archivo no encontrado)*
+SQLEOF
+        fi
+
+        cat >> "${report}" << 'SQLEOF'
+
+---
+SQLEOF
+
+        idx=$((idx + 1))
+    done
+
+    cat >> "${report}" << 'EOF'
+## Notas y Contexto
+
+- Las validaciones de **Presentacion 4** (INSERT) ejecutan `s-08-ilap-presentacion-4.plb`
+  en las 4 PDBs. Verifican: nombres de tablas, inserciones, datos BLOB, datos inválidos
+  y replicación de catálogos (tipo_monitor, tipo_procesador, tipo_tarjeta_video,
+  tipo_almacenamiento).
+
+- La validación de **Presentacion 5** (DELETE) ejecuta `s-08-ilap-presentacion-5.sql`
+  contra `${PDB_DEMO}` (por defecto eambdd_s1). Limpia los datos insertados.
+
+- Las validaciones de **Presentacion 6** (DELETE) ejecutan `s-08-ilap-presentacion-6.plb`
+  en las 4 PDBs. Verifican la transparencia de eliminación en cada nodo.
+
+- **⚠️ ATENCIÓN**: La validación de DELETE deja la base de datos vacía.
+  Para repoblar, ejecutar: `bash run-parte-4.sh` (sin `--validate`).
+
+---
+*Generado por run-parte-4.sh — Proyecto Final iLap BDD · UNAM FI 2026-2*
+EOF
+
+    log "Reporte Markdown generado: ${report}"
+}
+
 prepare_image_source() {
     local name="$1"
     local zip_path="${DATA_DIR}/${name}.zip"
@@ -194,7 +329,7 @@ run_validation_plb() {
     local stdin_payload="$2"
 
     printf '%b' "${stdin_payload}" \
-        | docker exec -i "${C1}" su - oracle -c "cd '${STAGE_PHASE2_DIR}' && sqlplus /nolog @${plb}"
+        | docker_sqlplus "${C1}" /nolog @"${STAGE_PHASE2_DIR}/${plb}"
 }
 
 mkdir -p "${LOG_DIR}"
@@ -268,43 +403,85 @@ run_logged_command \
 step "Limpiando carga previa para permitir reejecucion"
 run_logged_command \
     "s-08-ilap-presentacion-5" \
-    docker exec -i "${C1}" su - oracle -c "cd '${STAGE_PHASE2_DIR}' && sqlplus /nolog @s-08-ilap-presentacion-5.sql ${PDB_DEMO}"
+    docker_sqlplus "${C1}" /nolog @"${STAGE_PHASE2_DIR}/s-08-ilap-presentacion-5.sql" ${PDB_DEMO}
 
 step "Cargando catalogo manual STATUS_LAPTOP"
 run_logged_command \
     "s-08-ilap-presentacion-2" \
-    docker exec -i "${C1}" su - oracle -c "cd '${STAGE_PHASE2_DIR}' && sqlplus /nolog @s-08-ilap-presentacion-2.sql"
+    docker_sqlplus "${C1}" /nolog @"${STAGE_PHASE2_DIR}/s-08-ilap-presentacion-2.sql"
 
 step "Insertando carga inicial oficial mediante transparencia"
 run_logged_command \
     "s-08-ilap-presentacion-3" \
-    docker exec -i "${C1}" su - oracle -c "cd '${STAGE_PHASE2_DIR}' && sqlplus /nolog @s-08-ilap-presentacion-3.sql ${PDB_DEMO}"
+    docker_sqlplus "${C1}" /nolog @"${STAGE_PHASE2_DIR}/s-08-ilap-presentacion-3.sql" ${PDB_DEMO}
 
 ok "Parte 4 preparada con la carga inicial oficial."
 
 if [ "${RUN_VALIDATIONS}" = "true" ]; then
     step "Validando INSERT y datos replicados (Presentacion 4) en las 4 PDBs"
     for pdb in "${PDB_LIST[@]}"; do
+        _val_t0="$(timestamp)"
+        set +e
         run_logged_command \
             "s-08-ilap-presentacion-4-${pdb}" \
             run_validation_plb s-08-ilap-presentacion-4.plb "${pdb}\n${SERVICIO_LAPTOP_TECNICA}\n"
+        _val_rc=$?
+        set -e
+        _val_t1="$(timestamp)"
+        log_validation_result \
+            "Presentacion 4 - INSERT (${pdb})" \
+            "${C1} → ${pdb}" \
+            "run_validation_plb s-08-ilap-presentacion-4.plb [PDB=${pdb}, TECNICA=${SERVICIO_LAPTOP_TECNICA}]" \
+            "${LOG_DIR}/s-08-ilap-presentacion-4-${pdb}-${LOG_STAMP}.log" \
+            "${_val_rc}" \
+            "${_val_t0}" \
+            "${_val_t1}"
     done
     ok "Validacion de INSERT completada en las 4 PDBs."
 
     step "Eliminando datos para validar transparencia de DELETE (Presentacion 5)"
+    _val_t0="$(timestamp)"
+    set +e
     run_logged_command \
         "s-08-ilap-presentacion-5-validacion" \
-        docker exec -i "${C1}" su - oracle -c "cd '${STAGE_PHASE2_DIR}' && sqlplus /nolog @s-08-ilap-presentacion-5.sql ${PDB_DEMO}"
+        docker_sqlplus "${C1}" /nolog @"${STAGE_PHASE2_DIR}/s-08-ilap-presentacion-5.sql" ${PDB_DEMO}
+    _val_rc=$?
+    set -e
+    _val_t1="$(timestamp)"
+    log_validation_result \
+        "Presentacion 5 - DELETE (limpieza)" \
+        "${C1} → ${PDB_DEMO}" \
+        "docker_sqlplus ${C1} /nolog @s-08-ilap-presentacion-5.sql [PDB=${PDB_DEMO}]" \
+        "${LOG_DIR}/s-08-ilap-presentacion-5-validacion-${LOG_STAMP}.log" \
+        "${_val_rc}" \
+        "${_val_t0}" \
+        "${_val_t1}"
 
     step "Validando DELETE (Presentacion 6) en las 4 PDBs"
     for pdb in "${PDB_LIST[@]}"; do
+        _val_t0="$(timestamp)"
+        set +e
         run_logged_command \
             "s-08-ilap-presentacion-6-${pdb}" \
             run_validation_plb s-08-ilap-presentacion-6.plb "${pdb}\n"
+        _val_rc=$?
+        set -e
+        _val_t1="$(timestamp)"
+        log_validation_result \
+            "Presentacion 6 - DELETE (${pdb})" \
+            "${C1} → ${pdb}" \
+            "run_validation_plb s-08-ilap-presentacion-6.plb [PDB=${pdb}]" \
+            "${LOG_DIR}/s-08-ilap-presentacion-6-${pdb}-${LOG_STAMP}.log" \
+            "${_val_rc}" \
+            "${_val_t0}" \
+            "${_val_t1}"
     done
     ok "Validacion de DELETE completada en las 4 PDBs."
     warn "La validacion de DELETE (Presentacion 6) dejo la BDD vacia."
     warn "Para repoblar, ejecuta de nuevo run-parte-4.sh (sin --validate)."
+
+    step "Generando reporte Markdown de validaciones"
+    generate_validation_report
 fi
 
 _total=$(( $(date +%s) - _GLOBAL_T0 ))
@@ -316,13 +493,14 @@ echo -e "  ${DIM}- Log general: ${RUN_LOG}${RST}"
 echo -e "  ${DIM}- PDB demo: ${PDB_DEMO}${RST}"
 if [ "${RUN_VALIDATIONS}" = "true" ]; then
     echo -e "  ${DIM}- Validaciones ejecutadas: Presentacion 4 (INSERT) y 6 (DELETE) en las 4 PDBs${RST}"
+    echo -e "  ${DIM}- Reporte Markdown: ${VALIDATION_REPORT}${RST}"
     echo -e "${GRN}${BOLD}Siguiente comando recomendado:${RST}"
     echo -e "  ${DIM}- Repoblar la BDD (la validacion DELETE la dejo vacia):  bash ${SCRIPT_DIR}/run-parte-4.sh${RST}"
 else
     echo -e "${GRN}${BOLD}Siguientes comandos recomendados:${RST}"
     echo -e "  ${DIM}0) Validar todo automaticamente:  bash ${SCRIPT_DIR}/run-parte-4.sh --validate${RST}"
-    echo -e "  ${DIM}1) Validar inserts:  docker exec -it ${C1} su - oracle -c \"cd '${STAGE_PHASE2_DIR}' && sqlplus /nolog @s-08-ilap-presentacion-4.plb\"${RST}"
-    echo -e "  ${DIM}2) Limpiar carga:    docker exec -it ${C1} su - oracle -c \"cd '${STAGE_PHASE2_DIR}' && sqlplus /nolog @s-08-ilap-presentacion-5.sql ${PDB_DEMO}\"${RST}"
-    echo -e "  ${DIM}3) Validar delete:  docker exec -it ${C1} su - oracle -c \"cd '${STAGE_PHASE2_DIR}' && sqlplus /nolog @s-08-ilap-presentacion-6.plb\"${RST}"
+    echo -e "  ${DIM}1) Validar inserts:  docker exec -it -e ORACLE_HOME=/opt/oracle/product/23ai/dbhomeFree -e PATH=/opt/oracle/product/23ai/dbhomeFree/bin:/usr/local/bin:/usr/bin ${C1} sqlplus /nolog @${STAGE_PHASE2_DIR}/s-08-ilap-presentacion-4.plb${RST}"
+    echo -e "  ${DIM}2) Limpiar carga:    docker exec -it -e ORACLE_HOME=/opt/oracle/product/23ai/dbhomeFree -e PATH=/opt/oracle/product/23ai/dbhomeFree/bin:/usr/local/bin:/usr/bin ${C1} sqlplus /nolog @${STAGE_PHASE2_DIR}/s-08-ilap-presentacion-5.sql ${PDB_DEMO}${RST}"
+    echo -e "  ${DIM}3) Validar delete:  docker exec -it -e ORACLE_HOME=/opt/oracle/product/23ai/dbhomeFree -e PATH=/opt/oracle/product/23ai/dbhomeFree/bin:/usr/local/bin:/usr/bin ${C1} sqlplus /nolog @${STAGE_PHASE2_DIR}/s-08-ilap-presentacion-6.plb${RST}"
 fi
 echo ""
