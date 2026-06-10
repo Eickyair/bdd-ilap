@@ -28,3 +28,6 @@ entregables/parte-2/validation-report.txt
 
 # ── IDE ───────────────────────────────────────────────────────────────────────
 /.vscode/
+
+# Generated validation reports from run-parte-4.sh --validate
+entregables/parte-4/validacion-parte-4.md
