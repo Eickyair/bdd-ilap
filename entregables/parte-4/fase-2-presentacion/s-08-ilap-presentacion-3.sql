@@ -21,7 +21,7 @@ connect ilap_bdd/ilap_bdd@&&p_pdb
 alter session set nls_date_format = 'yyyy-mm-dd hh24:mi:ss';
 
 prompt Ejecutando copia local de imagenes de muestra
-host bash s-08-ilap-presentacion-3.sh
+host bash /tmp/bdd/proyecto-final/workdir/entregables/parte-4/fase-2-presentacion/s-08-ilap-presentacion-3.sh
 
 prompt => Realizando limpieza inicial ....
 set feedback off
@@ -59,44 +59,44 @@ prompt => Realizando carga de datos ....
 prompt cargando tipo_tarjeta_video
 connect ilap_bdd/ilap_bdd@&&p_pdb
 alter session set nls_date_format = 'yyyy-mm-dd hh24:mi:ss';
-@@../../../carga-inicial/tipo_tarjeta_video.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/tipo_tarjeta_video.sql
 
 prompt cargando tipo_procesador
-@@../../../carga-inicial/tipo_procesador.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/tipo_procesador.sql
 
 prompt cargando tipo_monitor
-@@../../../carga-inicial/tipo_monitor.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/tipo_monitor.sql
 
 prompt cargando tipo_almacenamiento
-@@../../../carga-inicial/tipo_almacenamiento.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/tipo_almacenamiento.sql
 
 prompt cargando sucursal
-@@../../../carga-inicial/sucursal-1.sql
-@@../../../carga-inicial/sucursal-2.sql
-@@../../../carga-inicial/sucursal-3.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/sucursal-1.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/sucursal-2.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/sucursal-3.sql
 
 prompt cargando sucursal_taller
-@@../../../carga-inicial/sucursal_taller-1.sql
-@@../../../carga-inicial/sucursal_taller-2.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/sucursal_taller-1.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/sucursal_taller-2.sql
 
 prompt cargando sucursal_venta
-@@../../../carga-inicial/sucursal_venta-1.sql
-@@../../../carga-inicial/sucursal_venta-2.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/sucursal_venta-1.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/sucursal_venta-2.sql
 
 prompt cargando laptop (con datos BLOB)
-@@../../../carga-inicial/laptop-1.sql
-@@../../../carga-inicial/laptop-2.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/laptop-1.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/laptop-2.sql
 
 prompt cargando laptop_inventario
-@@../../../carga-inicial/laptop_inventario.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/laptop_inventario.sql
 
 prompt cargando historico_status_laptop
-@@../../../carga-inicial/historico_status_laptop-1.sql
-@@../../../carga-inicial/historico_status_laptop-2.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/historico_status_laptop-1.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/historico_status_laptop-2.sql
 
 prompt cargando servicio_laptop (con datos BLOB)
-@@../../../carga-inicial/servicio_laptop-1.sql
-@@../../../carga-inicial/servicio_laptop-2.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/servicio_laptop-1.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/servicio_laptop-2.sql
 
 commit;
 

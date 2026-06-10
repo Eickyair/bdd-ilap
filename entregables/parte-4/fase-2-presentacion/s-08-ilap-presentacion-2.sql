@@ -15,7 +15,7 @@ prompt Cargando catalogo en eambdd_s1
 prompt ======================================
 connect ilap_bdd/ilap_bdd@eambdd_s1
 delete from status_laptop;
-@@../../../carga-inicial/status_laptop.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/status_laptop.sql
 commit;
 
 prompt ======================================
@@ -23,7 +23,7 @@ prompt Cargando catalogo en eambdd_s2
 prompt ======================================
 connect ilap_bdd/ilap_bdd@eambdd_s2
 delete from status_laptop;
-@@../../../carga-inicial/status_laptop.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/status_laptop.sql
 commit;
 
 prompt ======================================
@@ -31,7 +31,7 @@ prompt Cargando catalogo en eambdd_s3
 prompt ======================================
 connect ilap_bdd/ilap_bdd@eambdd_s3
 delete from status_laptop;
-@@../../../carga-inicial/status_laptop.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/status_laptop.sql
 commit;
 
 prompt ======================================
@@ -39,7 +39,7 @@ prompt Cargando catalogo en eambdd_s4
 prompt ======================================
 connect ilap_bdd/ilap_bdd@eambdd_s4
 delete from status_laptop;
-@@../../../carga-inicial/status_laptop.sql
+@@/tmp/bdd/proyecto-final/workdir/carga-inicial/status_laptop.sql
 commit;
 
 prompt Listo!
