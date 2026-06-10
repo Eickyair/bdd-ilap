@@ -73,6 +73,9 @@ Si la sintaxis exacta de Oracle 23ai o un error de infraestructura no está en l
 1. **Validación antirrecreación.** Antes de proponer/ejecutar `docker run` o `docker build`, inspecciona el sistema (`docker ps -a`) para ver si los contenedores ya existen. **Prohibido** duplicar o sobrescribir contenedores activos. Contenedores del proyecto: `c1-bdd-proy-eam` (S1+S2) y `c2-bdd-proy-eam` (S3+S4), red `bdd-proy-net` (172.20.0.0/16).
 2. **Creación bajo demanda.** Solo instancia contenedores nuevos si la tarea lo exige explícitamente, y regístralo en la memoria técnica.
 
+## 6.5. Lectura de PDFs
+Cuando necesites leer un archivo PDF y el comando `read` falle por falta de soporte nativo, carga la skill `read-pdf` (descubierta automáticamente desde `.opencode/skills/read-pdf/`) para extraer el texto plano del PDF usando herramientas del sistema (`pdftotext`, `pypdf`, `mutool`).
+
 ## 7. Formato de salida en entregables
 Al entregar un script o una solución técnica, respeta esta estructura:
 

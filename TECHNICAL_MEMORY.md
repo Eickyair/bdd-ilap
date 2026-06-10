@@ -11,6 +11,7 @@
 | 2026-06-07 | GitHub Copilot | 3.0 | Implementación de Parte 3 completa: Fase 1 redefine sinónimos lógicos `*_f<n>` y `*_r<n>` con validador; Fase 2 crea vistas globales, tablas temporales y funciones BLOB; Fase 3 agrega triggers `INSTEAD OF` y un validador estructural separado para la entrega. |
 | 2026-06-07 | GitHub Copilot | 4.0 | Implementación de Parte 4: soporte BLOB con `DIRECTORY` y `fx_carga_blob`, integración del paquete oficial `carga-inicial/`, generación de archivos BLOB y orquestador `run-parte-4.sh`. |
 | 2026-06-08 | Erick Yair Aguilar Martínez | 4.1 | Alineación de Parte 4 con `pf-04.pdf`: regeneración de los 4 archivos de carga BLOB con `fx_carga_blob` aleatorio (`dbms_random`/`round`, 100 reales por tabla, `.png`), `presentacion-5` migrado a procedimiento almacenado `pr_elimina_carga_inicial`, eliminación del paso `ajuste-catalogos` (redundante con DDL actualizado), flag `--validate` en `run-parte-4.sh`, corrección del predicado F1 en el trigger `SUCURSAL` y limpieza del `.gitignore`. |
+| 2026-06-09 | Erick Yair Aguilar Martínez | 4.2 | Migración de scripts a `docker_sqlplus` (usuario erick), corrección de resolución `@@` con `../` en Oracle 23ai, y adición de reporte Markdown en `--validate`. |
 
 ---
 
@@ -163,3 +164,27 @@ Se define un entorno de bases de datos distribuidas integrado por **4 nodos**. P
 * **Ejecución interna en contenedores:** `run-parte-4.sh` copia `carga-inicial/` y `fase-2-presentacion/` a `/tmp/bdd/proyecto-final/workdir` dentro de ambos contenedores para evitar problemas de permisos del usuario `oracle`.
 * **Flag `--validate`:** `run-parte-4.sh -v` ejecuta automáticamente Presentación 4 (INSERT + replicación) en las 4 PDBs, luego Presentación 5 (DELETE) y Presentación 6 (validación DELETE). La validación de DELETE deja la BDD vacía; relanzar sin la flag para repoblar.
 * **Validadores conservados:** `s-08-ilap-presentacion-4.plb` y `s-08-ilap-presentacion-6.plb` son los validadores interactivos oficiales. Para `SERVICIO_LAPTOP` la técnica vigente es `S` (fragmentación derivada por `SUCURSAL_TALLER`).
+
+### 6.4. Migración a docker_sqlplus y corrección de @@ en Oracle 23ai (2026-06-09)
+
+* **Problema:** Oracle 23ai sqlplus con `whenever oserror exit failure rollback` activa trata la falla de resolución de `@@../../../path` con `..` como un `O/S Message: No such file or directory` (error fatal). Los `@@` con rutas relativas (`../../../`) no se resuelven correctamente desde el directorio del script cuando se carga con `@/absolute/path/script.sql`. CWD por defecto de `docker exec --user erick` es `/`, no el directorio del script.
+
+* **Solución aplicada:**
+  - Scripts de orquestación (`.sh`) ahora usan `source utils.sh` + `docker_sqlplus CONTAINER /nolog @/abs/path.sql` (ejecuta como usuario `erick`, inyecta `ORACLE_HOME`, `ORACLE_SID`, `PATH`).
+  - Los `@@../../../carga-inicial/...` en archivos `.sql` se reemplazaron por `@@/tmp/bdd/proyecto-final/workdir/carga-inicial/...` (rutas absolutas).
+  - El `host bash script.sh` en línea 24 de `s-08-ilap-presentacion-3.sql` se corrigió a ruta absoluta similar.
+
+* **Wrapper `docker_sqlplus`** (`entregables/utils.sh` + `entregables/bin/docker_sqlplus.sh`):
+  - Función `docker_sqlplus()` en `utils.sh` invoca `${UTILS_BIN}/docker_sqlplus.sh`
+  - El wrapper ejecuta: `docker exec -i --user erick -e ORACLE_HOME=... -e ORACLE_SID=free -e PATH=... "$C" sqlplus "$@"`
+  - El ejecutable (`bin/docker_sqlplus.sh`) es requerido porque `timeout(1)` no puede invocar funciones bash directamente.
+  - `02-oracle-config.sh` NO se migró — retiene sus 16 `su - oracle` (tareas administrativas).
+
+* **Reporte Markdown de validaciones:** `run-parte-4.sh --validate` ahora genera `entregables/parte-4/validacion-parte-4.md` con:
+  - Resumen: total/aprobadas/fallidas por validación
+  - Detalle por paso: nodo, comando, timestamps, código de salida, output completo del log
+  - Funciones `log_validation_result()` y `generate_validation_report()` acumulando resultados.
+  - Corrección de bug: `((passed++))` devolvía exit status 1 bajo `set -e` → usar `$((passed + 1))`.
+
+* **Archivos nuevos:** `entregables/utils.sh`, `entregables/bin/docker_sqlplus.sh`, `.opencode/skills/read-pdf/SKILL.md`, `opencode.jsonc`.
+* **Scripts modificados:** 10 scripts de orquestación en partes 2, 3 y 4 + 2 archivos `.sql` de presentacion.
